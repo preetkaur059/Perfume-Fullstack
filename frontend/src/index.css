@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
+@import "tailwindcss";
+
+body {
+  /* background-color: black; */
+  font-family: "Alice", serif;
+  overflow-x: hidden;
+}
+
+@layer utilities {
+  .font-allura {
+    font-family: 'Allura', cursive;
+  }
+}
+
+.scroll-box::-webkit-scrollbar {
+  width: 10px;
+  
+}
+.scroll-box::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0px;
+}
+
+/* scroll thumb (move krn wali part) */
+.scroll-box::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 0px;
+}
+
+/* hover effect on scroll thumb */
+.scroll-box::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox layi */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 15s linear infinite;
+}
