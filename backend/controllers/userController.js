@@ -2,9 +2,27 @@ import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+
+// GET ALL USERS
 const getUsers = async (req, res) => {
-  res.send("ALL USERS!");
+  try {
+    const users = await User.find().select("-password");
+
+    return res.status(200).json({
+      success: true,
+      users,
+    });
+
+  } catch (error) {
+    console.log("Get users error:", error);
+
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
 };
+
 
 const accessTokenCookieOptions = {
   httpOnly: true,
@@ -13,14 +31,17 @@ const accessTokenCookieOptions = {
   path: "/",
 };
 
+
+// PUBLIC USER
 const publicUser = (user) => ({
   id: user._id,
   fullName: user.fullName,
   email: user.email,
+  isAdmin: user.isAdmin,
 });
 
-// REGISTER
 
+// REGISTER
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -32,7 +53,6 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Check email already exists
     const doesExist = await User.findOne({ email });
 
     if (doesExist) {
@@ -42,11 +62,9 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const user = await User.create({
+    await User.create({
       fullName,
       email,
       password: hashedPassword,
@@ -69,7 +87,6 @@ const registerUser = async (req, res) => {
 
 
 // LOGIN
-
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -81,7 +98,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -91,7 +107,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Compare entered password with hashed password
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password
@@ -104,7 +119,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Create JWT token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -116,7 +130,11 @@ const loginUser = async (req, res) => {
       }
     );
 
-    res.cookie("accessToken", token, accessTokenCookieOptions);
+    res.cookie(
+      "accessToken",
+      token,
+      accessTokenCookieOptions
+    );
 
     return res.status(200).json({
       success: true,
@@ -129,37 +147,144 @@ const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      msg: "Server error",  
+      msg: "Server error",
     });
   }
 };
 
+
+// GET CURRENT USER
 const getCurrentUser = async (req, res) => {
   try {
     const token = req.cookies.accessToken;
 
     if (!token) {
-      return res.status(401).json({ success: false, msg: "Unauthorized" });
+      return res.status(401).json({
+        success: false,
+        msg: "Unauthorized",
+      });
     }
 
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+    const { userId } = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
-      res.clearCookie("accessToken", accessTokenCookieOptions);
-      return res.status(401).json({ success: false, msg: "Unauthorized" });
+      res.clearCookie(
+        "accessToken",
+        accessTokenCookieOptions
+      );
+
+      return res.status(401).json({
+        success: false,
+        msg: "Unauthorized",
+      });
     }
 
-    return res.status(200).json({ success: true, user: publicUser(user) });
+    return res.status(200).json({
+      success: true,
+      user: publicUser(user),
+    });
+
   } catch (error) {
-    res.clearCookie("accessToken", accessTokenCookieOptions);
-    return res.status(401).json({ success: false, msg: "Unauthorized" });
+    res.clearCookie(
+      "accessToken",
+      accessTokenCookieOptions
+    );
+
+    return res.status(401).json({
+      success: false,
+      msg: "Unauthorized",
+    });
   }
 };
 
+
+// LOGOUT
 const logoutUser = (req, res) => {
-  res.clearCookie("accessToken", accessTokenCookieOptions);
-  return res.status(200).json({ success: true, msg: "Logged out successfully" });
+  res.clearCookie(
+    "accessToken",
+    accessTokenCookieOptions
+  );
+
+  return res.status(200).json({
+    success: true,
+    msg: "Logged out successfully",
+  });
 };
 
-export { getUsers, registerUser, loginUser, getCurrentUser, logoutUser };
+
+// UPDATE USER
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullName, email, isAdmin } = req.body;
+
+    if (!fullName || !email) {
+      return res.status(400).json({
+        success: false,
+        msg: "Full name and email are required",
+      });
+    }
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    // Check if email is already used by another user
+    const emailExists = await User.findOne({
+      email,
+      _id: { $ne: id },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({
+        success: false,
+        msg: "Email already exists",
+      });
+    }
+
+    user.fullName = fullName;
+    user.email = email;
+    user.isAdmin = isAdmin;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      msg: "User updated successfully",
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      },
+    });
+
+  } catch (error) {
+    console.log("Update user error:", error);
+
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};
+
+
+export {
+  getUsers,
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  logoutUser,
+  updateUser,
+};

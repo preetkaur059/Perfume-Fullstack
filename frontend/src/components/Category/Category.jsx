@@ -1,15 +1,17 @@
-import React from "react";
-import products from "../Temp/Temp";
+import React, { useContext } from "react";
+
 import Heading from "../Heading/Heading";
 import Cards from "../Cards/Cards";
+import { StoreContext } from "../../context/StoreContext";
 
 const Category = ({ type }) => {
+   const { products } = useContext(StoreContext);
 
  const filteredProducts =
     type === "All"
       ? products
       : products.filter(
-          (item) => item.category.toLowerCase() === type.toLowerCase()
+          (item) => item.category?.toLowerCase() === type.toLowerCase()
         );
 
   // Heading text change
@@ -24,7 +26,7 @@ const Category = ({ type }) => {
   
   const renderProduct = filteredProducts.map((product) => {
     return (
-      <Cards key={product.id}
+      <Cards key={product._id ?? product.id}
         product={product} />
     )
   })

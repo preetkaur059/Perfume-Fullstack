@@ -24,6 +24,14 @@ import Login from './components/auth/Login'
 import Signup from './components/auth/SignUp'
 import ForgotPassword from './components/auth/ForgotPassword'
 import Profile from './components/profile/profile'
+import AdminProtectedRoute from './components/admin/AdminProtectedRoute/AdminProtectedRoute'
+import AdminDashboard from './components/admin/AdminProtectedRoute/AdminDashboard/AdminDashboard'
+import Dashboard from './components/admin/AdminProtectedRoute/AdminDashboard/Dashboard'
+import Products from './components/admin/AdminProtectedRoute/AdminDashboard/Products'
+import Settings from './components/admin/AdminProtectedRoute/AdminDashboard/Settings'
+import orders from './components/admin/AdminProtectedRoute/AdminDashboard/Orders'
+import Users from './components/admin/AdminProtectedRoute/AdminDashboard/Users'
+
 
 const App = () => {
 
@@ -38,7 +46,7 @@ const App = () => {
       children:
         [
           {
-            path: '/',
+            index: true,
             element: <Home />,
           },
           {
@@ -105,9 +113,39 @@ const App = () => {
             path: '/product/:id',
             element: <ProductDetails />,
           }
-
         ]
-    }
+    },
+    {
+      path: '/admin',
+      element: <AdminProtectedRoute />,
+      children: [
+        {
+        element: <AdminDashboard />,
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: "products",
+            element: <Products />,
+          },
+          {
+            path: "orders",
+            element: <Orders />,
+          },
+          {
+            path: "users",
+            element: <Users />,
+          },
+          {
+            path: "settings",
+            element: <Settings />,
+          },
+        ],
+      },
+    ],
+  },
   ])
   return (
     <StoreProvider>

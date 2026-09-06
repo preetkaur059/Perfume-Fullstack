@@ -1,6 +1,6 @@
 import express from "express";
 import Product from "../models/product.js";
-import { createProduct, updateProduct, deleteProduct, getAllProducts} from "../controllers/productController.js";
+import { createProduct, updateProduct, deleteProduct, getAllProducts, getSingleProduct} from "../controllers/productController.js";
 import isLoggedIn from "../middlewares/isLoggedIn.js";
 import isAdmin from "../middlewares/isAdmin.js";
 
@@ -14,10 +14,12 @@ router.get("/", async (req, res) => {
 
 router.post("/", isLoggedIn, isAdmin, createProduct);
 
-router.patch("/:id", updateProduct);
+router.patch("/:id", isLoggedIn, isAdmin, updateProduct);
 
-router.delete("/:id", deleteProduct);
+router.delete("/:id", isLoggedIn, isAdmin, deleteProduct);
 
 router.get("/all", getAllProducts);
+
+router.get("/:id", getSingleProduct);
 
 export default router;

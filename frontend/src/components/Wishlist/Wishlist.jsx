@@ -30,7 +30,7 @@ const Wishlist = () => {
 
           {wishlist.map((item) => (
             <div
-              key={item.id}
+              key={item._id ?? item.id}
               className="bg-[#111] border border-[#222] rounded-lg overflow-hidden 
                          hover:-translate-y-1 hover:shadow-lg hover:shadow-lime-300/20 
                          transition duration-300">
@@ -39,13 +39,13 @@ const Wishlist = () => {
               <div className="relative overflow-hidden">
                 <img
                   src={item.image}
-                  alt={item.name}
+                  alt={item.productName}
                   className="w-full h-62 object-cover hover:scale-110 transition duration-500" />
 
                 {/* Remove Icon */}
                 <button
                   onClick={() => {
-                    removeFromWishlist(item.id);
+                    removeFromWishlist(item._id ?? item.id);
                     toast.error("Removed from wishlist 💔");
                   }}
                   className="absolute cursor-pointer top-2 right-2 bg-black/70 p-1.5 rounded-full text-red-400 hover:text-red-600 transition">
@@ -56,7 +56,7 @@ const Wishlist = () => {
               {/* Content */}
               <div className="p-3 text-center">
                 <h3 className="text-sm font-semibold mb-1">
-                  {item.name}
+                  {item.productName}
                 </h3>
 
                 <p className="text-lime-300 text-lg font-bold mb-3">

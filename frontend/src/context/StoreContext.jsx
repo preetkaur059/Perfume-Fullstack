@@ -1,8 +1,10 @@
 import { createContext, useEffect, useState } from "react";
+import api from "../api/client";
 
 export const StoreContext = createContext();
 
 export const StoreProvider = ({ children }) => {
+  const getProductId = (product) => product._id ?? product.id;
 
   const [cart, setCart] = useState(() => {
     const storeCart = localStorage.getItem('cart')
@@ -28,12 +30,13 @@ export const StoreProvider = ({ children }) => {
 
     setCart(prevCart => {
 
-      const existingItem = prevCart.find(item => item.id === product.id);
+      const productId = getProductId(product);
+      const existingItem = prevCart.find(item => getProductId(item) === productId);
 
       //  If already exists → increase quantity
       if (existingItem) {
         return prevCart.map(item =>
-          item.id === product.id
+          getProductId(item) === productId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
@@ -45,21 +48,21 @@ export const StoreProvider = ({ children }) => {
     });
   };
 
-  const quantityIncrement = (id) => {
+  const quantityIncrement = (productId) => {
     setCart(prevCart =>
       prevCart.map(item =>
-        item.id === id
+        getProductId(item) === productId
           ? { ...item, quantity: item.quantity + 1 }
           : item
       )
     );
   };
 
-  const quantityDecrease = (id) => {
+  const quantityDecrease = (productId) => {
     setCart(prevCart =>
       prevCart
         .map(item =>
-          item.id === id
+          getProductId(item) === productId
             ? { ...item, quantity: item.quantity - 1 }
             : item
         )
@@ -78,24 +81,40 @@ export const StoreProvider = ({ children }) => {
   // add to wishlist 
   const addToWishlist = (product) => {
     setWishlist(prev => {
-      const alreadyAdded = prev.find(item => item.id === product.id);
+      const productId = getProductId(product);
+      const alreadyAdded = prev.find(item => getProductId(item) === productId);
 
       if (alreadyAdded) {
         // remove if already exists (toggle)
-        return prev.filter(item => item.id !== product.id);
+        return prev.filter(item => getProductId(item) !== productId);
       } else {
         // add if not exists
         return [...prev, product];
       }
     });
   };
+const [products, setProducts] = useState([]);
 
-  const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+const getProducts = async () => {
+  try {
+    const { data } = await api.get("/products/all");
+    setProducts(Array.isArray(data) ? data : data.products ?? []);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    setProducts([]);
+  }
+};
+
+useEffect(() => {
+  getProducts();
+}, []);
+
+  const removeFromCart = (productId) => {
+    setCart(prev => prev.filter(item => getProductId(item) !== productId));
   };
 
-  const removeFromWishlist = (id) => {
-    setWishlist(prev => prev.filter(item => item.id !== id));
+  const removeFromWishlist = (productId) => {
+    setWishlist(prev => prev.filter(item => getProductId(item) !== productId));
   };
 
   const [deliveryInfo, setDeliveryInfo] = useState({
@@ -163,7 +182,8 @@ export const StoreProvider = ({ children }) => {
       cartCount,
       setCartCount,
       orderNumber,
-      setOrderNumber
+      setOrderNumber,
+      products,
     }}>
       {children}
     </StoreContext.Provider>

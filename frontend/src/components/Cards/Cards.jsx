@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 
 const Cards = ({ product }) => {
     const { wishlist, addToWishlist, addToCart } = useContext(StoreContext);
+    const productId = product._id ?? product.id;
 
     return (
         <div className="group md:m-0 m-5 bg-[#111] overflow-hidden border border-[#222] 
@@ -19,7 +20,7 @@ const Cards = ({ product }) => {
                 <button
                     onClick={() => {
 
-                        const isInWishlist = wishlist.some(item => item.id === product.id);
+                        const isInWishlist = wishlist.some(item => (item._id ?? item.id) === productId);
 
                         addToWishlist(product);
 
@@ -31,7 +32,7 @@ const Cards = ({ product }) => {
 
                     }}
                     className={`text-xl hover:scale-110 cursor-pointer hover:text-lime-400 transition 
-        ${wishlist.some(item => item.id === product.id) ? 'text-lime-300' : 'text-white'}`}>
+        ${wishlist.some(item => (item._id ?? item.id) === productId) ? 'text-lime-300' : 'text-white'}`}>
                     <FaHeart />
                 </button>
 
@@ -47,11 +48,11 @@ const Cards = ({ product }) => {
             </div>
 
             {/* Image Section */}
-            <Link to={`/product/${product.id}`}>
+            <Link to={`/product/${productId}`}>
                 <div className=" relative w-full h-52 md:h-62 overflow-hidden">
                     <img
                         src={product.image}
-                        alt={product.name}
+                        alt={product.productName}
                         loading="lazy"
                         className="w-full h-full object-cover hover:scale-110 transition duration-700"
                     />
@@ -61,7 +62,7 @@ const Cards = ({ product }) => {
             {/* Content */}
             <div className="text-center pt-5">
                 <h3 className="text-white md:text-lg mb-2 tracking-wide">
-                    {product.name}
+                    {product.productName}
                 </h3>
 
 

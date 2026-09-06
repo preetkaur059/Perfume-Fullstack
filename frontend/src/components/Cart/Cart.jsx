@@ -31,18 +31,18 @@ const Cart = () => {
         <div className="lg:col-span-2 space-y-6">
 
           {cart.map((product, index) => (
-            <div key={product.id}
+            <div key={product._id ?? product.id}
               className="flex flex-col md:flex-row items-center bg-[#111] border border-[#222] p-1 rounded-xl hover:shadow-xl hover:shadow-lime-300/10 transition">
 
               {/* Image */}
               <img
                 src={product.image}
-                alt={product.name}
+                alt={product.productName}
                 className="w-22 h-22 object-cover rounded-lg" />
 
               {/* Details */}
               <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-                <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+                <h3 className="text-xl font-semibold mb-2">{product.productName}</h3>
                 <p className="text-lime-300 text-lg font-bold">
                   ${product.price.toFixed(2)}
                 </p>
@@ -51,7 +51,7 @@ const Cart = () => {
               {/* Quantity Controls */}
               <div className="flex items-center gap-4 mt-4 md:mt-0">
 
-                <button onClick={() => quantityDecrease(product.id)}
+                <button onClick={() => quantityDecrease(product._id ?? product.id)}
                   className="bg-[#222] p-2 rounded-md cursor-pointer hover:bg-lime-300 hover:text-black transition">
                   <FaMinus />
                 </button>
@@ -60,7 +60,7 @@ const Cart = () => {
                   {product.quantity}
                 </span>
 
-                <button onClick={() => quantityIncrement(product.id)}
+                <button onClick={() => quantityIncrement(product._id ?? product.id)}
                   className="bg-[#222] p-2 rounded-md cursor-pointer hover:bg-lime-300 hover:text-black transition">
                   <FaPlus />
                 </button>
@@ -69,8 +69,8 @@ const Cart = () => {
 
               {/* Remove Button */}
               <button onClick={() => {
-                removeFromCart(product.id);
-                toast.error(`${product.name} removed from cart 🛒`);
+                removeFromCart(product._id ?? product.id);
+                toast.error(`${product.productName} removed from cart 🛒`);
               }}
                 className="ml-6 mr-5 cursor-pointer text-2xl text-red-400 hover:text-red-600 transition mt-4 md:mt-0">
                 <FaTrash />

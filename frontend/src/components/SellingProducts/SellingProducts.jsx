@@ -18,14 +18,17 @@ const SellingProducts = () => {
   const [activeTab, setActiveTab] = useState('All');
   const [products, setProducts] = useState([]);
 
+
    const getProducts = async () => {
       try {
-        const response = await api.get("/products");
-        console.log('response: ', response);
 
-        console.log('response.data: ', response.data);
+        const response = await api.get("/products/all");
+        // console.log('response: ', response);
+
+        // console.log('response.data: ', response.data);
 
         setProducts(response.data);
+        
       } catch (error) {
         console.log("Error fetching products:", error);
       }
@@ -41,19 +44,19 @@ const SellingProducts = () => {
   const { addToCart, searchItem } = useContext(StoreContext);
   const navigate = useNavigate();
 
-  let filteredItems = activeTab === 'All' ? products : products.filter(item => item.category.toLowerCase() === activeTab.toLowerCase());
+  let filteredItems = activeTab === 'All' ? products : products?.filter(item => item.category?.toLowerCase() === activeTab.toLowerCase());
 
   const searchedItems = filteredItems.filter(product =>
-        product.name?.toLowerCase().includes(searchItem.toLowerCase())
+        product.productName?.toLowerCase().includes(searchItem.toLowerCase())
     );
   // Render Cards 
-  const renderProducts = searchedItems.slice(0, 8).map((product, index) => (
-    <div key={product.id}
+  const renderProducts = searchedItems.slice(0, 20).map((product, index) => (
+    <div key={product._id}
       data-aos="fade-up"
       data-aos-delay={index * 200}
     >
     <Cards
-      key={product.id}
+      key={product._id}
       product={product}
       addToCart={addToCart} />
     </div>   

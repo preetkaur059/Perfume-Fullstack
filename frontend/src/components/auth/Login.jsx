@@ -76,7 +76,7 @@ const Login = () => {
       toast.success("Login successful!");
 
       window.dispatchEvent(new Event("auth:changed"));
-      navigate("/");
+      navigate("/admin", { replace: true });
     } else {
       toast.error(data.msg || "Invalid email or password");
     }

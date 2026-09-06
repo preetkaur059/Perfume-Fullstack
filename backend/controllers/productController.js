@@ -103,10 +103,9 @@ const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find();
 
-    return res.status(200).json({
-      success: true,
-      data: products,
-    });
+    return res.status(200).json(
+     products
+    );
 
   } catch (error) {
     return res.status(500).json({
@@ -117,10 +116,40 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+//get single product 
+
+const getSingleProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      product,
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 
 export {
   createProduct,
   updateProduct,
   deleteProduct,
   getAllProducts,
+  getSingleProduct,
 };
