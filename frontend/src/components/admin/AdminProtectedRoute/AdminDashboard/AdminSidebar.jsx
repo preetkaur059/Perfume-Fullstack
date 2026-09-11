@@ -52,14 +52,12 @@ const AdminSidebar = () => {
   ];
 
   const handleLogout = () => {
-
     navigate("/login");
   };
 
   return (
     <Sidebar className="border-r border-white/10">
       <SidebarContent className="bg-[#090909] text-white">
-
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-5">
             <div>
@@ -67,9 +65,7 @@ const AdminSidebar = () => {
                 ZIVARA
               </h1>
 
-              <p className="mt-1 text-xs text-gray-500">
-                ADMIN PANEL
-              </p>
+              <p className="mt-1 text-xs text-gray-500">ADMIN PANEL</p>
             </div>
           </SidebarGroupLabel>
 
@@ -80,20 +76,29 @@ const AdminSidebar = () => {
 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      className="p-0 hover:bg-transparent"
+                    >
                       <NavLink
                         to={item.url}
                         end={item.url === "/admin"}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 rounded-lg px-3 py-2 ${
+                          `group flex w-full items-center gap-3 rounded-lg px-4 py-3
+                          transition-all duration-200
+                          ${
                             isActive
-                              ? "bg-lime-400 text-black hover:bg-lime-300"
-                              : "text-gray-400  "
+                              ? "bg-lime-400 text-black"
+                              : "text-gray-400 hover:bg-[#222] hover:text-white"
                           }`
                         }
                       >
-                        <Icon size={18} />
-                        <span>{item.title}</span>
+                        <Icon
+                          size={18}
+                          className="transition-all duration-200 group-hover:text-lime-400"
+                        />
+
+                        <span className="font-medium">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -116,7 +121,6 @@ const AdminSidebar = () => {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-
       </SidebarContent>
     </Sidebar>
   );

@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import Heading from '../Heading/Heading'
-import productList from '../Temp/Temp'
 import Cards from '../Cards/Cards';
 import { Link } from 'react-router-dom';
 import noproductfound from '../../assets/no.avif'
@@ -9,35 +8,12 @@ import { StoreContext } from "../../context/StoreContext";
 import Button from '../Button/Button';
 import Allproducts from '../Allproducts/Allproducts';
 import { useNavigate } from "react-router-dom";
-import { useEffect } from 'react';
-import api from '../../api/client';
-api
+import { useProducts } from '@/hooks/products/useProducts';
 
 const SellingProducts = () => {
   const categories = ['All', 'Men', 'Women', 'Unisex'];
   const [activeTab, setActiveTab] = useState('All');
-  const [products, setProducts] = useState([]);
-
-
-   const getProducts = async () => {
-      try {
-
-        const response = await api.get("/products/all");
-        // console.log('response: ', response);
-
-        // console.log('response.data: ', response.data);
-
-        setProducts(response.data);
-        
-      } catch (error) {
-        console.log("Error fetching products:", error);
-      }
-    };
-
-  useEffect(() => {
-  
-  getProducts();
-  }, []);
+  const { data: products = [] } = useProducts();
 
 
 

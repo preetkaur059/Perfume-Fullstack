@@ -16,6 +16,11 @@ const isLoggedIn = (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // A refresh JWT is never valid for a protected API route.
+    if (decoded.tokenType !== "access") {
+      throw new Error("Invalid token type");
+    }
+
     // Store decoded user data in request
     req.user = decoded;
 

@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { useParams } from "react-router-dom";
 // import productList from "../Temp/Temp";
 import { StoreContext } from "../../context/StoreContext";
 import { FaHeart, FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
-import api from "@/api/client";
+import { useProduct } from "@/hooks/products/useProducts";
 
 const ProductDetails = () => {
 
@@ -12,28 +12,9 @@ const ProductDetails = () => {
 
     const { wishlist, addToWishlist, addToCart } = useContext(StoreContext);
 
-    const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data: product, isLoading } = useProduct(id);
 
-  useEffect(() => {
-    const getProduct = async () => {
-      setLoading(true);
-      setProduct(null);
-
-      try {
-        const { data } = await api.get(`/products/${id}`);
-        setProduct(data.product);
-      } catch (error) {
-        console.error("Error getting product:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getProduct();
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="bg-black min-h-screen text-white flex justify-center items-center">
         Loading product...

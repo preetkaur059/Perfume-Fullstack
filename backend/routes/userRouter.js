@@ -1,6 +1,6 @@
 import express from "express"
-import User from "../models/user.js"
-import { getUsers, registerUser, loginUser, getCurrentUser, logoutUser,  updateUser } from "../controllers/userController.js"
+import { getUsers, registerUser, loginUser, refreshAccessToken, getCurrentUser, logoutUser, updateUser } from "../controllers/userController.js"
+import isLoggedIn from "../middlewares/isLoggedIn.js"
 
 const router = express.Router()
 
@@ -8,7 +8,8 @@ router.get("/all", getUsers)
 
 router.post("/register", registerUser)
 router.post("/login", loginUser);
-router.get("/me", getCurrentUser);
+router.post("/refresh", refreshAccessToken);
+router.get("/me", isLoggedIn, getCurrentUser);
 router.post("/logout", logoutUser);
 
 router.patch("/:id", updateUser);

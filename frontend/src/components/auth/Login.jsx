@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate  } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../../api/client";
+import { useLogin } from "@/hooks/auth/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ const Login = () => {
 
   // Errors
   const [errors, setErrors] = useState({});
+  const login = useLogin();
 
   // Handle Input Change
   const handleChange = (e) => {
@@ -70,12 +71,11 @@ const Login = () => {
   }
 
   try {
-    const { data } = await api.post("/users/login", formData);
+    const data = await login.mutateAsync(formData);
 
     if (data.success) {
       toast.success("Login successful!");
 
-      window.dispatchEvent(new Event("auth:changed"));
       navigate("/admin", { replace: true });
     } else {
       toast.error(data.msg || "Invalid email or password");
@@ -164,7 +164,7 @@ const Login = () => {
                 onClick={() =>
                   setShowPassword(!showPassword)
                 }
-                className="absolute right-4 top-1/2
+                  className="absolute right-4 top-1/2
                 -translate-y-1/2 text-[#e2f2b0]
                 text-sm cursor-pointer"
               >
@@ -195,6 +195,7 @@ const Login = () => {
           <button
             type="button"
             onClick={handleLogin}
+            disabled={login.isPending}
             className="w-full py-3
             bg-gradient-to-b from-lime-200 to-lime-300
             text-black font-bold text-lg rounded-lg
@@ -203,7 +204,7 @@ const Login = () => {
             hover:bg-gradient-to-b
             hover:from-lime-300 hover:to-lime-200"
           >
-            Login
+            {login.isPending ? "Logging in..." : "Login"}
           </button>
 
           {/* Signup */}

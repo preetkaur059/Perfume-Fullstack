@@ -1,5 +1,4 @@
 import { createContext, useEffect, useState } from "react";
-import api from "../api/client";
 
 export const StoreContext = createContext();
 
@@ -93,22 +92,6 @@ export const StoreProvider = ({ children }) => {
       }
     });
   };
-const [products, setProducts] = useState([]);
-
-const getProducts = async () => {
-  try {
-    const { data } = await api.get("/products/all");
-    setProducts(Array.isArray(data) ? data : data.products ?? []);
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    setProducts([]);
-  }
-};
-
-useEffect(() => {
-  getProducts();
-}, []);
-
   const removeFromCart = (productId) => {
     setCart(prev => prev.filter(item => getProductId(item) !== productId));
   };
@@ -183,7 +166,6 @@ useEffect(() => {
       setCartCount,
       orderNumber,
       setOrderNumber,
-      products,
     }}>
       {children}
     </StoreContext.Provider>

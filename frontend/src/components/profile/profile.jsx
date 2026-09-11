@@ -1,35 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../../api/client";
+import { useCurrentUser, useLogout } from "@/hooks/auth/useAuth";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: user, isLoading, isError } = useCurrentUser();
+  const logout = useLogout();
 
-  useEffect(() => {
-    let isActive = true;
-
-    const loadCurrentUser = async () => {
-      try {
-        const { data } = await api.get("/users/me");
-        if (isActive) setUser(data.user);
-      } catch {
-        if (isActive) navigate("/login", { replace: true });
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
-
-    loadCurrentUser();
-    return () => { isActive = false; };
-  }, [navigate]);
+  if (isError) {
+    navigate("/login", { replace: true });
+  }
 
   const handleLogout = async () => {
     try {
-      await api.post("/users/logout");
-      window.dispatchEvent(new Event("auth:changed"));
+      await logout.mutateAsync();
       toast.success("Logged out successfully!");
       navigate("/login");
     } catch {
@@ -105,13 +90,14 @@ const Profile = () => {
 
             <button
               onClick={handleLogout}
+              disabled={logout.isPending}
               className="flex-1 py-3 rounded-lg
               border border-red-500/50
               text-red-400 font-semibold
               hover:bg-red-500/10
               transition duration-300 cursor-pointer"
             >
-              Logout
+              {logout.isPending ? "Logging out..." : "Logout"}
             </button>
 
           </div>

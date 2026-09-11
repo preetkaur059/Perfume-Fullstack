@@ -9,11 +9,11 @@ import { Link } from 'react-router-dom';
 import { useContext } from "react";
 import { StoreContext } from "../../context/StoreContext";
 import { NavLink, useLocation } from "react-router-dom";
-import api from "../../api/client";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const Navbar = () => {
     const { totalItems, wishlist, setSearchItem, cartCount } = useContext(StoreContext);
-    const [user, setUser] = useState(null);
+    const { data: user } = useCurrentUser();
     const [open, setOpen] = useState(false);
     const location = useLocation();
     const isCategoryActive =
@@ -56,27 +56,6 @@ const Navbar = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, [])
-
-    useEffect(() => {
-        let isActive = true;
-
-        const loadCurrentUser = async () => {
-            try {
-                const { data } = await api.get("/users/me");
-                if (isActive) setUser(data.user);
-            } catch {
-                if (isActive) setUser(null);
-            }
-        };
-
-        loadCurrentUser();
-        window.addEventListener("auth:changed", loadCurrentUser);
-
-        return () => {
-            isActive = false;
-            window.removeEventListener("auth:changed", loadCurrentUser);
-        };
-    }, []);
 
     return (
         <header className={` z-99 fixed top-5 left-0 right-0  `}>

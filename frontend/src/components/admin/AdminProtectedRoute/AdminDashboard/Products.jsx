@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
+import React, { useState } from "react";
+import { Plus, Pencil, Trash2, Search,  Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import api from "../../../../api/client"
+import {
+  useCreateProduct,
+  useDeleteProduct,
+  useProducts,
+  useUpdateProduct,
+} from "@/hooks/products/useProducts";
 
-import { Card, CardContent, } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,36 +25,15 @@ const initialForm = {
 };
 
 const Products = () => {
-  const [products, setProducts] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get("/products/all");
-      const productList = Array.isArray(response.data)
-        ? response.data
-        : response.data.data ?? response.data.products ?? [];
-
-      setProducts(productList);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { data: products = [], isLoading, isError, error } = useProducts();
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const isSaving = createProduct.isPending || updateProduct.isPending;
 
   const handleChange = (e) => {
     setForm({
@@ -92,102 +77,66 @@ const Products = () => {
       return;
     }
 
-    try {
-      setSaving(true);
+    const productData = {
+      productName: form.productName,
+      price: Number(form.price),
+      category: form.category,
+      rating: form.rating ? Number(form.rating) : 0,
+      description: form.description,
+      image: form.image,
+    };
 
-      const data = {
-        productName: form.productName,
-        price: Number(form.price),
-        category: form.category,
-        rating: form.rating ? Number(form.rating) : 0,
-        description: form.description,
-        image: form.image,
-      };
+    const mutation = editingId ? updateProduct : createProduct;
+    const variables = editingId
+      ? { productId: editingId, productData }
+      : productData;
 
-      if (editingId) {
-        const response = await api.patch(
-          `/products/${editingId}`,
-          data
+    mutation.mutate(variables, {
+      onSuccess: () => {
+        toast.success(
+          editingId
+            ? "Product updated successfully"
+            : "Product created successfully",
         );
-
-        if (response.data.success) {
-          toast.success("Product updated successfully");
-
-          setProducts((prev) =>
-            prev.map((product) =>
-              product._id === editingId
-                ? response.data.data
-                : product
-            )
+        closeForm();
+      },
+      onError: (mutationError) => {
+        if (mutationError.response?.status === 401) {
+          toast.error("Please login first");
+        } else if (mutationError.response?.status === 403) {
+          toast.error("Admin access required");
+        } else {
+          toast.error(
+            mutationError.response?.data?.message || "Something went wrong",
           );
         }
-      } else {
-        const response = await api.post("/products", data);
-
-        if (response.data.success) {
-          toast.success("Product created successfully");
-
-          setProducts((prev) => [
-            response.data.data,
-            ...prev,
-          ]);
-        }
-      }
-
-      closeForm();
-    } catch (error) {
-      console.error(error);
-
-      if (error.response?.status === 401) {
-        toast.error("Please login first");
-      } else if (error.response?.status === 403) {
-        toast.error("Admin access required");
-      } else {
-        toast.error(
-          error.response?.data?.message ||
-            "Something went wrong"
-        );
-      }
-    } finally {
-      setSaving(false);
-    }
+      },
+    });
   };
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this product?"
+      "Are you sure you want to delete this product?",
     );
 
     if (!confirmed) return;
 
-    try {
-      const response = await api.delete(`/products/${id}`);
-
-      if (response.data.success) {
-        setProducts((prev) =>
-          prev.filter((product) => product._id !== id)
-        );
-
-        toast.success("Product deleted successfully");
-      }
-    } catch (error) {
-      console.error(error);
-
-      if (error.response?.status === 403) {
-        toast.error("Admin access required");
-      } else {
-        toast.error(
-          error.response?.data?.message ||
-            "Failed to delete product"
-        );
-      }
-    }
+    deleteProduct.mutate(id, {
+      onSuccess: () => toast.success("Product deleted successfully"),
+      onError: (mutationError) => {
+        if (mutationError.response?.status === 403) {
+          toast.error("Admin access required");
+        } else {
+          toast.error(
+            mutationError.response?.data?.message || "Failed to delete product",
+          );
+        }
+      },
+    });
   };
 
   const filteredProducts = products.filter((product) =>
-    product.productName
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
+    product.productName?.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -195,17 +144,25 @@ const Products = () => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-2xl font-bold">Products</h2>
-          <p className="text-sm text-gray-500">
-            Manage your perfume products
-          </p>
+          <p className="text-sm text-gray-500">Manage your perfume products</p>
         </div>
 
         <Button
           onClick={openAddForm}
-          className="bg-lime-400 text-black hover:bg-lime-300"
+          disabled={isLoading}
+          className="bg-lime-400 text-black hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Plus size={18} />
-          Add Product
+          {isLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Loading...
+            </>
+          ) : (
+            <>
+              <Plus size={18} />
+              Add Product
+            </>
+          )}
         </Button>
       </div>
 
@@ -218,117 +175,177 @@ const Products = () => {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          disabled={isLoading}
           placeholder="Search products..."
-          className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-gray-600"
+          className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
       {showForm && (
-        <Card className="border-white/10 bg-white/5 text-white">
-          <CardContent className="p-5">
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
+        <Dialog open={showForm} onOpenChange={(open) => !open && closeForm()}>
+          <DialogContent className="w-[40vw] max-w-none sm:max-w-none md:max-w-none lg:max-w-none xl:max-w-none
+             border border-white/10 bg-[#111] px-8 py-6 text-white">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-2xl font-medium tracking-wide text-white">
                 {editingId ? "Edit Product" : "Add Product"}
-              </h3>
+              </DialogTitle>
+            </DialogHeader>
 
-              <button
-                onClick={closeForm}
-                className="text-gray-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm text-gray-400">
+                    Product Name
+                  </label>
 
-            <form
-              onSubmit={handleSubmit}
-              className="grid gap-4 md:grid-cols-2"
-            >
-              <Input
-                name="productName"
-                value={form.productName}
-                onChange={handleChange}
-                placeholder="Product name"
-                className="border-white/10 bg-black text-white"
-              />
+                  <Input
+                    name="productName"
+                    value={form.productName}
+                    onChange={handleChange}
+                    placeholder="Enter product name"
+                    className="border-white/10 bg-black text-white"
+                  />
+                </div>
 
-              <Input
-                name="price"
-                type="number"
-                value={form.price}
-                onChange={handleChange}
-                placeholder="Price"
-                className="border-white/10 bg-black text-white"
-              />
+                <div>
+                  <label className="mb-1.5 block text-sm text-gray-400">
+                    Price
+                  </label>
 
-              <Input
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                placeholder="Category"
-                className="border-white/10 bg-black text-white"
-              />
+                  <Input
+                    name="price"
+                    type="number"
+                    value={form.price}
+                    onChange={handleChange}
+                    placeholder="Enter price"
+                    className="border-white/10 bg-black text-white"
+                  />
+                </div>
 
-              <Input
-                name="rating"
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
-                value={form.rating}
-                onChange={handleChange}
-                placeholder="Rating"
-                className="border-white/10 bg-black text-white"
-              />
+                <div>
+                  <label className="mb-1.5 block text-sm text-gray-400">
+                    Category
+                  </label>
 
-              <Input
-                name="image"
-                value={form.image}
-                onChange={handleChange}
-                placeholder="Image URL"
-                className="border-white/10 bg-black text-white md:col-span-2"
-              />
+                  <Input
+                    name="category"
+                    value={form.category}
+                    onChange={handleChange}
+                    placeholder="e.g. Men, Women, Unisex"
+                    className="border-white/10 bg-black text-white"
+                  />
+                </div>
 
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Description"
-                rows="4"
-                className="rounded-md border border-white/10 bg-black p-3 text-sm text-white outline-none md:col-span-2"
-              />
+                <div>
+                  <label className="mb-1.5 block text-sm text-gray-400">
+                    Rating
+                  </label>
 
-              <div className="flex gap-3 md:col-span-2">
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-lime-400 text-black hover:bg-lime-300"
-                >
-                  {saving
-                    ? "Saving..."
-                    : editingId
-                    ? "Update Product"
-                    : "Create Product"}
-                </Button>
+                  <Input
+                    name="rating"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={form.rating}
+                    onChange={handleChange}
+                    placeholder="0 - 5"
+                    className="border-white/10 bg-black text-white"
+                  />
+                </div>
+              </div>
 
+              <div>
+                <label className="mb-1.5 block text-sm text-gray-400">
+                  Image URL
+                </label>
+
+                <Input
+                  name="image"
+                  value={form.image}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className="border-white/10 bg-black text-white"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm text-gray-400">
+                  Description
+                </label>
+
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Enter product description..."
+                  rows={4}
+                  className="w-full resize-none rounded-md border border-white/10 bg-black p-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-lime-400"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={closeForm}
+                  disabled={isSaving}
                   className="border-white/10 bg-transparent text-white hover:bg-white/5"
                 >
                   Cancel
                 </Button>
+
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-lime-400 text-black hover:bg-lime-300"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={17} className="mr-2 animate-spin" />
+                      {editingId ? "Updating..." : "Creating..."}
+                    </>
+                  ) : editingId ? (
+                    "Update Product"
+                  ) : (
+                    "Create Product"
+                  )}
+                </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       )}
 
       <Card className="border-white/10 bg-white/5 text-white">
         <CardContent className="p-0">
-          {loading ? (
-            <div className="p-8 text-center text-gray-500">
-              Loading products...
+          {isLoading ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+              <div className="relative flex h-16 w-16 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+
+                <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-lime-400" />
+
+                <Loader2 size={24} className="animate-spin text-lime-400" />
+              </div>
+
+              <div className="text-center">
+                <p className="font-medium text-white">Loading products</p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Please wait while we fetch your products...
+                </p>
+              </div>
+
+              <div className="flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-lime-400" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-lime-400 [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-lime-400 [animation-delay:300ms]" />
+              </div>
+            </div>
+          ) : isError ? (
+            <div className="p-8 text-center text-red-400">
+              {error.response?.data?.message || "Failed to fetch products"}
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
@@ -349,10 +366,7 @@ const Products = () => {
 
                 <tbody>
                   {filteredProducts.map((product) => (
-                    <tr
-                      key={product._id}
-                      className="border-b border-white/5"
-                    >
+                    <tr key={product._id} className="border-b border-white/5">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           {product.image ? (
@@ -377,9 +391,7 @@ const Products = () => {
                         {product.category}
                       </td>
 
-                      <td className="px-5 py-4">
-                        ₹{product.price}
-                      </td>
+                      <td className="px-5 py-4">₹{product.price}</td>
 
                       <td className="px-5 py-4 text-lime-400">
                         {product.rating || 0}
@@ -390,9 +402,7 @@ const Products = () => {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() =>
-                              openEditForm(product)
-                            }
+                            onClick={() => openEditForm(product)}
                             className="text-gray-400 hover:bg-white/5 hover:text-white"
                           >
                             <Pencil size={17} />
@@ -401,9 +411,8 @@ const Products = () => {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() =>
-                              handleDelete(product._id)
-                            }
+                            onClick={() => handleDelete(product._id)}
+                            disabled={deleteProduct.isPending}
                             className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
                           >
                             <Trash2 size={17} />

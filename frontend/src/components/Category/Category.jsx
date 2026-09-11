@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
+import React from "react";
 
 import Heading from "../Heading/Heading";
 import Cards from "../Cards/Cards";
-import { StoreContext } from "../../context/StoreContext";
+import { useProducts } from "@/hooks/products/useProducts";
 
 const Category = ({ type }) => {
-   const { products } = useContext(StoreContext);
+  const { data: products = [] } = useProducts();
 
  const filteredProducts =
     type === "All"

@@ -132,7 +132,7 @@ const App = () => {
           },
           {
             path: "orders",
-            element: <Orders />,
+            element: <orders />,
           },
           {
             path: "users",

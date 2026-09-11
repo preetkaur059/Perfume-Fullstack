@@ -24,12 +24,38 @@ const getUsers = async (req, res) => {
 };
 
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// Cookies stay HTTP-only, so browser JavaScript can never read either JWT.
 const accessTokenCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   path: "/",
+  maxAge: 15 * 60 * 1000,
 };
+
+const refreshTokenCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const createAccessToken = (user) =>
+  jwt.sign(
+    { userId: user._id, email: user.email, tokenType: "access" },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+
+const createRefreshToken = (user) =>
+  jwt.sign(
+    { userId: user._id, tokenType: "refresh" },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: "7d" }
+  );
 
 
 // PUBLIC USER
@@ -119,22 +145,8 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
-    );
-
-    res.cookie(
-      "accessToken",
-      token,
-      accessTokenCookieOptions
-    );
+    res.cookie("accessToken", createAccessToken(user), accessTokenCookieOptions);
+    res.cookie("refreshToken", createRefreshToken(user), refreshTokenCookieOptions);
 
     return res.status(200).json({
       success: true,
@@ -153,30 +165,49 @@ const loginUser = async (req, res) => {
 };
 
 
+// REFRESH ACCESS TOKEN
+const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, msg: "Refresh token missing" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    if (decoded.tokenType !== "refresh") {
+      return res.status(401).json({ success: false, msg: "Invalid refresh token" });
+    }
+
+    // Do not issue a fresh access token for an account that was deleted.
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      res.clearCookie("accessToken", accessTokenCookieOptions);
+      res.clearCookie("refreshToken", refreshTokenCookieOptions);
+      return res.status(401).json({ success: false, msg: "Unauthorized" });
+    }
+
+    res.cookie("accessToken", createAccessToken(user), accessTokenCookieOptions);
+
+    return res.status(200).json({ success: true, msg: "Access token refreshed" });
+  } catch (error) {
+    res.clearCookie("accessToken", accessTokenCookieOptions);
+    res.clearCookie("refreshToken", refreshTokenCookieOptions);
+    return res.status(401).json({ success: false, msg: "Invalid or expired refresh token" });
+  }
+};
+
+
 // GET CURRENT USER
 const getCurrentUser = async (req, res) => {
   try {
-    const token = req.cookies.accessToken;
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        msg: "Unauthorized",
-      });
-    }
-
-    const { userId } = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
-      res.clearCookie(
-        "accessToken",
-        accessTokenCookieOptions
-      );
+      res.clearCookie("accessToken", accessTokenCookieOptions);
+      res.clearCookie("refreshToken", refreshTokenCookieOptions);
 
       return res.status(401).json({
         success: false,
@@ -190,11 +221,6 @@ const getCurrentUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.clearCookie(
-      "accessToken",
-      accessTokenCookieOptions
-    );
-
     return res.status(401).json({
       success: false,
       msg: "Unauthorized",
@@ -205,10 +231,8 @@ const getCurrentUser = async (req, res) => {
 
 // LOGOUT
 const logoutUser = (req, res) => {
-  res.clearCookie(
-    "accessToken",
-    accessTokenCookieOptions
-  );
+  res.clearCookie("accessToken", accessTokenCookieOptions);
+  res.clearCookie("refreshToken", refreshTokenCookieOptions);
 
   return res.status(200).json({
     success: true,
@@ -284,6 +308,7 @@ export {
   getUsers,
   registerUser,
   loginUser,
+  refreshAccessToken,
   getCurrentUser,
   logoutUser,
   updateUser,

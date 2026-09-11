@@ -1,31 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import api from "../../../api/client"; 
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const AdminProtectedRoute = () => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        const { data } = await api.get("/users/me");
-
-        
-        setUser(data.user);
-        console.log("CURRENT USER:", data.user);
-        console.log("IS ADMIN:", data.user.isAdmin);
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCurrentUser();
-  }, []);
-
-  
+  const { data: user, isLoading } = useCurrentUser();
 
   if (isLoading) {
     return <div>Loading...</div>;

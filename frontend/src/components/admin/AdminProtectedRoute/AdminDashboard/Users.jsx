@@ -1,51 +1,38 @@
-import React, { useEffect, useState } from "react";
-import api from "@/api/client";
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+
+import { useUpdateUser, useUsers } from "@/hooks/users/useUsers";
 
 const Users = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // =========================
+  // FETCH USERS
+  // =========================
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useUsers();
 
-  // Edit modal
+  // =========================
+  // UPDATE USER MUTATION
+  // =========================
+  const updateUserMutation = useUpdateUser();
+
+  // =========================
+  // EDIT USER STATE
+  // =========================
   const [editingUser, setEditingUser] = useState(null);
+
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
     isAdmin: false,
   });
-  const [updating, setUpdating] = useState(false);
 
-  // FETCH USERS
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await api.get("/users/all");
-
-      console.log("USERS API RESPONSE:", response.data);
-
-      setUsers(response.data.users || []);
-    } catch (error) {
-      console.log("FULL ERROR:", error);
-      console.log("STATUS:", error.response?.status);
-      console.log("DATA:", error.response?.data);
-
-      setError(
-        error.response?.data?.msg ||
-          error.message ||
-          "Failed to fetch users"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
+  // =========================
   // OPEN EDIT MODAL
+  // =========================
   const handleEdit = (user) => {
     setEditingUser(user);
 
@@ -56,53 +43,73 @@ const Users = () => {
     });
   };
 
-  // UPDATE INPUT
+  // =========================
+  // HANDLE INPUT CHANGE
+  // =========================
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
 
     setEditForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
-  // UPDATE USER
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-
-    try {
-      setUpdating(true);
-
-      const response = await api.patch(
-        `/users/${editingUser._id}`,
-        editForm
-      );
-
-      console.log("UPDATE RESPONSE:", response.data);
-
-      // Update user in table
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user._id === editingUser._id
-            ? response.data.user
-            : user
-        )
-      );
-
-      setEditingUser(null);
-    } catch (error) {
-      console.log("UPDATE ERROR:", error);
-
-      alert(
-        error.response?.data?.msg ||
-          "Failed to update user"
-      );
-    } finally {
-      setUpdating(false);
-    }
+  // =========================
+  // HANDLE ROLE CHANGE
+  // =========================
+  const handleRoleChange = (e) => {
+    setEditForm((prev) => ({
+      ...prev,
+      isAdmin: e.target.value === "admin",
+    }));
   };
 
-  // STATS
+  // =========================
+  // UPDATE USER
+  // =========================
+  const handleUpdate = (e) => {
+    e.preventDefault();
+
+    if (!editingUser?._id) {
+      toast.error("User ID is missing");
+      return;
+    }
+
+    updateUserMutation.mutate(
+      {
+        id: editingUser._id,
+        userData: editForm,
+      },
+      {
+        onSuccess: () => {
+          toast.success("User updated successfully!");
+
+          setEditingUser(null);
+
+          setEditForm({
+            fullName: "",
+            email: "",
+            isAdmin: false,
+          });
+        },
+
+        onError: (error) => {
+          console.error("UPDATE ERROR:", error);
+
+          toast.error(
+            error?.response?.data?.msg ||
+              error?.response?.data?.message ||
+              "Failed to update user"
+          );
+        },
+      }
+    );
+  };
+
+  // =========================
+  // STATISTICS
+  // =========================
   const totalUsers = users.length;
 
   const adminUsers = users.filter(
@@ -113,13 +120,15 @@ const Users = () => {
     (user) => !user.isAdmin
   ).length;
 
-  // LOADING
-  if (loading) {
+  // =========================
+  // LOADING STATE
+  // =========================
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-black text-white p-6">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="w-10 h-10 border-4 border-zinc-700 border-t-lime-400 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-10 h-10 border-4 border-zinc-700 border-t-lime-400 rounded-full animate-spin mx-auto mb-4" />
 
             <p className="text-zinc-400">
               Loading users...
@@ -132,7 +141,10 @@ const Users = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-6">
-          {/* HEADER  */}
+
+      {/* =========================
+          HEADER
+      ========================= */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">
           Users
@@ -143,22 +155,26 @@ const Users = () => {
         </p>
       </div>
 
-    
-          {/* ERROR  */}
-      {error && (
+      {/* =========================
+          ERROR MESSAGE
+      ========================= */}
+      {isError && (
         <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
-          {error}
+          {error?.response?.data?.msg ||
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to fetch users"}
         </div>
       )}
 
-    
-          {/* STATS  */}
+      {/* =========================
+          STATS
+      ========================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
 
-        {/* Total Users */}
+        {/* TOTAL USERS */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-lime-400/40 transition">
           <div className="flex items-center justify-between">
-
             <div>
               <p className="text-sm text-zinc-400">
                 Total Users
@@ -174,14 +190,12 @@ const Users = () => {
                 👥
               </span>
             </div>
-
           </div>
         </div>
 
-        {/* Customers */}
+        {/* CUSTOMERS */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-lime-400/40 transition">
           <div className="flex items-center justify-between">
-
             <div>
               <p className="text-sm text-zinc-400">
                 Customers
@@ -197,14 +211,12 @@ const Users = () => {
                 🛍️
               </span>
             </div>
-
           </div>
         </div>
 
-        {/* Administrators */}
+        {/* ADMINISTRATORS */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-lime-400/40 transition">
           <div className="flex items-center justify-between">
-
             <div>
               <p className="text-sm text-zinc-400">
                 Administrators
@@ -220,19 +232,17 @@ const Users = () => {
                 🛡️
               </span>
             </div>
-
           </div>
         </div>
-
       </div>
 
-    
-          {/* USERS TABLE  */}
+      {/* =========================
+          USERS TABLE
+      ========================= */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
-        {/* Table Header */}
+        {/* TABLE HEADER */}
         <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-
           <div>
             <h2 className="text-lg font-semibold">
               All Users
@@ -248,12 +258,10 @@ const Users = () => {
               {totalUsers} Users
             </span>
           </div>
-
         </div>
 
-        {/* Responsive Table */}
+        {/* RESPONSIVE TABLE */}
         <div className="overflow-x-auto">
-
           <table className="w-full min-w-[800px]">
 
             <thead>
@@ -287,7 +295,6 @@ const Users = () => {
             </thead>
 
             <tbody>
-
               {users.length === 0 ? (
                 <tr>
                   <td
@@ -299,30 +306,26 @@ const Users = () => {
                 </tr>
               ) : (
                 users.map((user, index) => (
-
                   <tr
                     key={user._id}
                     className="border-b border-zinc-800/70 hover:bg-zinc-800/40 transition"
                   >
 
-                    {/* Number */}
+                    {/* NUMBER */}
                     <td className="px-5 py-4 text-zinc-500">
                       {index + 1}
                     </td>
 
-                    {/* User */}
+                    {/* USER */}
                     <td className="px-5 py-4">
-
                       <div className="flex items-center gap-3">
 
                         <div className="w-10 h-10 rounded-full bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
-
                           <span className="text-lime-400 font-semibold">
                             {user.fullName
                               ?.charAt(0)
-                              ?.toUpperCase()}
+                              ?.toUpperCase() || "U"}
                           </span>
-
                         </div>
 
                         <div>
@@ -336,17 +339,15 @@ const Users = () => {
                         </div>
 
                       </div>
-
                     </td>
 
-                    {/* Email */}
+                    {/* EMAIL */}
                     <td className="px-5 py-4 text-zinc-400">
                       {user.email}
                     </td>
 
-                    {/* Role */}
+                    {/* ROLE */}
                     <td className="px-5 py-4">
-
                       {user.isAdmin ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-lime-400/10 text-lime-400 border border-lime-400/20">
                           Admin
@@ -356,51 +357,44 @@ const Users = () => {
                           User
                         </span>
                       )}
-
                     </td>
 
-                    {/* User ID */}
+                    {/* USER ID */}
                     <td className="px-5 py-4">
-
                       <span className="text-xs text-zinc-500 font-mono">
                         {user._id}
                       </span>
-
                     </td>
 
-                    {/* Action */}
+                    {/* ACTION */}
                     <td className="px-5 py-4 text-right">
-
                       <button
+                        type="button"
                         onClick={() => handleEdit(user)}
                         className="px-4 py-2 rounded-lg border border-lime-400/30 text-lime-400 hover:bg-lime-400 hover:text-black transition font-medium text-sm"
                       >
                         Edit
                       </button>
-
                     </td>
 
                   </tr>
-
                 ))
               )}
-
             </tbody>
 
           </table>
-
         </div>
-
       </div>
 
-    
-          {/* EDIT MODAL  */}
+      {/* =========================
+          EDIT USER MODAL
+      ========================= */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
 
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
 
-            {/* Modal Header */}
+            {/* MODAL HEADER */}
             <div className="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
 
               <div>
@@ -414,6 +408,7 @@ const Users = () => {
               </div>
 
               <button
+                type="button"
                 onClick={() => setEditingUser(null)}
                 className="text-zinc-500 hover:text-white text-xl"
               >
@@ -422,13 +417,13 @@ const Users = () => {
 
             </div>
 
-            {/* Form */}
+            {/* FORM */}
             <form
               onSubmit={handleUpdate}
               className="p-6 space-y-5"
             >
 
-              {/* Full Name */}
+              {/* FULL NAME */}
               <div>
                 <label className="block text-sm text-zinc-400 mb-2">
                   Full Name
@@ -440,11 +435,12 @@ const Users = () => {
                   value={editForm.fullName}
                   onChange={handleChange}
                   className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white outline-none focus:border-lime-400 transition"
+                  placeholder="Enter full name"
                   required
                 />
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
               <div>
                 <label className="block text-sm text-zinc-400 mb-2">
                   Email
@@ -456,11 +452,12 @@ const Users = () => {
                   value={editForm.email}
                   onChange={handleChange}
                   className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white outline-none focus:border-lime-400 transition"
+                  placeholder="Enter email"
                   required
                 />
               </div>
 
-              {/* Role */}
+              {/* ROLE */}
               <div>
                 <label className="block text-sm text-zinc-400 mb-2">
                   Role
@@ -469,12 +466,7 @@ const Users = () => {
                 <select
                   name="isAdmin"
                   value={editForm.isAdmin ? "admin" : "user"}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      isAdmin: e.target.value === "admin",
-                    }))
-                  }
+                  onChange={handleRoleChange}
                   className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white outline-none focus:border-lime-400 transition"
                 >
                   <option value="user">
@@ -487,34 +479,36 @@ const Users = () => {
                 </select>
               </div>
 
-              {/* Buttons */}
+              {/* BUTTONS */}
               <div className="flex gap-3 pt-2">
 
+                {/* CANCEL */}
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="flex-1 px-4 py-3 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition"
+                  disabled={updateUserMutation.isPending}
+                  className="flex-1 px-4 py-3 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
 
+                {/* UPDATE */}
                 <button
                   type="submit"
-                  disabled={updating}
+                  disabled={updateUserMutation.isPending}
                   className="flex-1 px-4 py-3 rounded-lg bg-lime-400 text-black font-semibold hover:bg-lime-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {updating ? "Updating..." : "Update User"}
+                  {updateUserMutation.isPending
+                    ? "Updating..."
+                    : "Update User"}
                 </button>
 
               </div>
 
             </form>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 };
