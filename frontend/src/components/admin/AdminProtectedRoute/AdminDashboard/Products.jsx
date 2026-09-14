@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Search,  Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import uploadToCloudinary from "@/utils/uploadToCloudinary";
 
 const initialForm = {
   productName: "",
@@ -29,11 +30,24 @@ const Products = () => {
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { data: products = [], isLoading, isError, error } = useProducts();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const isSaving = createProduct.isPending || updateProduct.isPending;
+  const isSubmitting = isSaving || uploadingImage;
+
+  useEffect(
+    () => () => {
+      if (imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    },
+    [imagePreview],
+  );
 
   const handleChange = (e) => {
     setForm({
@@ -45,6 +59,8 @@ const Products = () => {
   const openAddForm = () => {
     setEditingId(null);
     setForm(initialForm);
+    setSelectedImage(null);
+    setImagePreview("");
     setShowForm(true);
   };
 
@@ -59,6 +75,8 @@ const Products = () => {
       description: product.description || "",
       image: product.image || "",
     });
+    setSelectedImage(null);
+    setImagePreview(product.image || "");
 
     setShowForm(true);
   };
@@ -67,13 +85,52 @@ const Products = () => {
     setShowForm(false);
     setEditingId(null);
     setForm(initialForm);
+    setSelectedImage(null);
+    setImagePreview("");
+  };
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const previousImage = form.image;
+    const localPreview = URL.createObjectURL(file);
+    setSelectedImage(file);
+    setImagePreview(localPreview);
+    setUploadingImage(true);
+
+    try {
+      const imageUrl = await uploadToCloudinary(file);
+      setForm((currentForm) => ({ ...currentForm, image: imageUrl }));
+      setImagePreview(imageUrl);
+      setSelectedImage(null);
+      toast.success("Image uploaded successfully");
+    } catch (uploadError) {
+      setImagePreview(previousImage);
+      setSelectedImage(null);
+      toast.error(uploadError.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+      event.target.value = "";
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.productName || !form.price || !form.category) {
+    if (!form.productName.trim() || !form.price || !form.category.trim()) {
       toast.error("Product name, price and category are required");
+      return;
+    }
+
+    if (Number(form.price) <= 0) {
+      toast.error("Price must be greater than zero");
+      return;
+    }
+
+    if (!editingId && !form.image) {
+      toast.error("Please select an image");
       return;
     }
 
@@ -257,16 +314,47 @@ const Products = () => {
 
               <div>
                 <label className="mb-1.5 block text-sm text-gray-400">
-                  Image URL
+                  Product Image
                 </label>
 
-                <Input
-                  name="image"
-                  value={form.image}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="border-white/10 bg-black text-white"
-                />
+                <div className="rounded-md border border-dashed border-white/15 bg-black p-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="flex size-20 min-h-20 min-w-20 max-h-20 max-w-20 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-md bg-white/5 text-center text-xs text-gray-500">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview}
+                          alt="Product preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        "No image selected"
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-2">
+                      <Input
+                        name="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        disabled={uploadingImage || isSaving}
+                        className="border-white/10 bg-black text-white file:mr-3 file:border-0 file:bg-lime-400 file:px-3 file:py-1 file:text-sm file:font-medium file:text-black"
+                      />
+                      <p className="text-xs text-gray-500">
+                        {uploadingImage
+                          ? "Uploading image to Cloudinary..."
+                          : selectedImage
+                            ? "Image selected"
+                            : "PNG, JPG, WEBP, or GIF up to 5 MB"}
+                      </p>
+                      {editingId && !uploadingImage && (
+                        <p className="text-xs text-gray-500">
+                          Leave unchanged to keep the current image.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -289,7 +377,7 @@ const Products = () => {
                   type="button"
                   variant="outline"
                   onClick={closeForm}
-                  disabled={isSaving}
+                  disabled={isSubmitting}
                   className="border-white/10 bg-transparent text-white hover:bg-white/5"
                 >
                   Cancel
@@ -297,13 +385,17 @@ const Products = () => {
 
                 <Button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSubmitting}
                   className="bg-lime-400 text-black hover:bg-lime-300"
                 >
-                  {isSaving ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 size={17} className="mr-2 animate-spin" />
-                      {editingId ? "Updating..." : "Creating..."}
+                      {uploadingImage
+                        ? "Uploading image..."
+                        : editingId
+                          ? "Updating..."
+                          : "Creating..."}
                     </>
                   ) : editingId ? (
                     "Update Product"
