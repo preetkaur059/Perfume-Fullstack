@@ -29,7 +29,7 @@ import AdminDashboard from './components/admin/AdminProtectedRoute/AdminDashboar
 import Dashboard from './components/admin/AdminProtectedRoute/AdminDashboard/Dashboard'
 import Products from './components/admin/AdminProtectedRoute/AdminDashboard/Products'
 import Settings from './components/admin/AdminProtectedRoute/AdminDashboard/Settings'
-import orders from './components/admin/AdminProtectedRoute/AdminDashboard/Orders'
+import AdminOrders from './components/admin/AdminProtectedRoute/AdminDashboard/AdminOrders'
 import Users from './components/admin/AdminProtectedRoute/AdminDashboard/Users'
 
 
@@ -131,8 +131,8 @@ const App = () => {
             element: <Products />,
           },
           {
-            path: "orders",
-            element: <orders />,
+            path: "AdminOrders",
+            element: <AdminOrders />,
           },
           {
             path: "users",

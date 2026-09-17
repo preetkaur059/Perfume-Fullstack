@@ -36,7 +36,7 @@ const AdminSidebar = () => {
     },
     {
       title: "Orders",
-      url: "/admin/orders",
+      url: "/admin/AdminOrders",
       icon: ShoppingCart,
     },
     {

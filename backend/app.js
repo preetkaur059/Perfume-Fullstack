@@ -2,6 +2,7 @@ import express, { json } from "express"
 import dotenv from "dotenv"
 import userRouter from "./routes/userRouter.js"
 import productsRouter from "./routes/productsRouter.js"
+import orderRouter from "./routes/orderRouter.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 
@@ -19,6 +20,7 @@ import cookieParser from "cookie-parser"
 
     app.use("/users", userRouter)
     app.use("/products", productsRouter)
+    app.use("/orders", orderRouter)
 
 
     app.get("/", (req, res)=>{
