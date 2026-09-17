@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { StoreContext } from "../../context/StoreContext";
 import Heading from "../Heading/Heading";
 import { useCreateOrder } from "@/hooks/orders/useOrders";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -12,7 +13,6 @@ const Checkout = () => {
   const {
     cart,
     subTotal,
-    shippingFee,
     orderTotal,
     clearCart,
     deliveryInfo,
@@ -22,6 +22,7 @@ const Checkout = () => {
   const [errors, setErrors] = useState({});
 
   const { mutate: createOrder, isPending } = useCreateOrder();
+  const { data: user } = useCurrentUser();
 
   const validateForm = () => {
     const newErrors = {};
@@ -62,12 +63,17 @@ const Checkout = () => {
   const handleProceed = (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (cart.length === 0) {
+      toast.error("Your cart is empty.");
       return;
     }
 
-    if (cart.length === 0) {
-      toast.error("Your cart is empty.");
+    if (!user?.id) {
+      toast.error("Please log in to place an order.");
+      return;
+    }
+
+    if (!validateForm()) {
       return;
     }
 
@@ -85,21 +91,29 @@ const Checkout = () => {
     */
 
     const orderItems = cart.map((item) => ({
+      // Cart entries are product objects. Only send their MongoDB ID, not the object.
       product: item._id ?? item.id,
-      quantity: Number(item.quantity) || 1,
+      quantity: Number(item.quantity),
     }));
 
-    // Make sure every cart item has a product ID
-    const hasInvalidProduct = orderItems.some(
-      (item) => !item.product
+    const hasInvalidOrderItem = orderItems.some(
+      (item) =>
+        !item.product ||
+        typeof item.product === "object" ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 1,
     );
 
-    if (hasInvalidProduct) {
-      toast.error("One or more products have an invalid ID.");
+    if (hasInvalidOrderItem) {
+      toast.error("One or more cart items are invalid.");
       return;
     }
 
-    createOrder(orderItems, {
+    createOrder({
+      user: user?.id,
+      orderItems,
+      status: "Processing",
+    }, {
       onSuccess: (response) => {
         /*
           Save the backend order temporarily so

@@ -32,11 +32,13 @@ export const useCreateOrder = () => {
 
   return useMutation({
     mutationFn: async ({ user, orderItems, status }) => {
-      const response = await api.post("/orders", {
+      const payload = {
         user,
         orderItems,
         status,
-      });
+      };
+
+      const response = await api.post("/orders", payload);
 
       return response.data;
     },
