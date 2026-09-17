@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import api from "@/api/client";
 import { toast } from "react-toastify";
@@ -28,7 +24,6 @@ export const useOrders = () => {
   });
 };
 
-
 // ===============================
 // CREATE ORDER
 // ===============================
@@ -36,9 +31,11 @@ export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (orderItems) => {
+    mutationFn: async ({ user, orderItems, status }) => {
       const response = await api.post("/orders", {
+        user,
         orderItems,
+        status,
       });
 
       return response.data;
@@ -50,20 +47,14 @@ export const useCreateOrder = () => {
         queryKey: ["orders"],
       });
 
-      toast.success(
-        data.message || "Order created successfully"
-      );
+      toast.success(data.message || "Order created successfully");
     },
 
     onError: (error) => {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to create order"
-      );
+      toast.error(error.response?.data?.message || "Failed to create order");
     },
   });
 };
-
 
 // ===============================
 // UPDATE ORDER
@@ -120,16 +111,11 @@ export const useUpdateOrder = () => {
         queryKey: ["orders"],
       });
 
-      toast.success(
-        data.message || "Order updated successfully"
-      );
+      toast.success(data.message || "Order updated successfully");
     },
 
     onError: (error) => {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to update order"
-      );
+      toast.error(error.response?.data?.message || "Failed to update order");
     },
   });
 };
@@ -142,9 +128,7 @@ export const useDeleteOrder = () => {
 
   return useMutation({
     mutationFn: async (id) => {
-      const response = await api.delete(
-        `/orders/${id}`
-      );
+      const response = await api.delete(`/orders/${id}`);
 
       return response.data;
     },
@@ -154,16 +138,11 @@ export const useDeleteOrder = () => {
         queryKey: ["orders"],
       });
 
-      toast.success(
-        data.message || "Order deleted successfully"
-      );
+      toast.success(data.message || "Order deleted successfully");
     },
 
     onError: (error) => {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to delete order"
-      );
+      toast.error(error.response?.data?.message || "Failed to delete order");
     },
   });
 };
