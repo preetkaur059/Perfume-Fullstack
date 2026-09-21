@@ -1,16 +1,30 @@
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { createPagination, getPagination } from "../utils/pagination.js";
 
 
 // GET ALL USERS
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const { page, limit } = getPagination(req.query);
+    const total = await User.countDocuments();
+    const pagination = createPagination({ page, limit, total });
+    const users = await User.find()
+      .select("-password")
+      .sort({ _id: -1 })
+      .skip((pagination.page - 1) * limit)
+      .limit(limit);
+    const adminCount = await User.countDocuments({ isAdmin: true });
 
     return res.status(200).json({
       success: true,
-      users,
+      data: users,
+      pagination,
+      summary: {
+        adminCount,
+        customerCount: total - adminCount,
+      },
     });
 
   } catch (error) {

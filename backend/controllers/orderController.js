@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createPagination, getPagination } from "../utils/pagination.js";
 import Order from "../models/order.js";
 import Product from "../models/product.js";
 
@@ -103,15 +104,20 @@ const createOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({
-      user: req.user.userId,
-    })
+    const { page, limit } = getPagination(req.query);
+    const filter = { user: req.user.userId };
+    const total = await Order.countDocuments(filter);
+    const pagination = createPagination({ page, limit, total });
+    const orders = await Order.find(filter)
       .populate(orderPopulate)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((pagination.page - 1) * limit)
+      .limit(limit);
 
     return res.status(200).json({
       success: true,
       data: orders,
+      pagination,
     });
   } catch (error) {
     return res.status(500).json({
@@ -280,13 +286,19 @@ const deleteOrder = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
   try {
+    const { page, limit } = getPagination(req.query);
+    const total = await Order.countDocuments();
+    const pagination = createPagination({ page, limit, total });
     const orders = await Order.find({})
       .populate(orderPopulate)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((pagination.page - 1) * limit)
+      .limit(limit);
 
     return res.status(200).json({
       success: true,
       data: orders,
+      pagination,
     });
   } catch (error) {
     return res.status(500).json({

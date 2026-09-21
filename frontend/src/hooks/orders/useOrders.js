@@ -6,15 +6,15 @@ import { toast } from "react-toastify";
 // ===============================
 // GET ORDERS
 // ===============================
-export const useOrders = () => {
+const getOrders = async (url, { page = 1, limit = 10 } = {}) => {
+  const { data } = await api.get(url, { params: { page, limit } });
+  return data;
+};
+
+export const useOrders = (params = {}) => {
   return useQuery({
-    queryKey: ["orders"],
-
-    queryFn: async () => {
-      const response = await api.get("/admin/orders");
-
-      return response.data.data;
-    },
+    queryKey: ["orders", params],
+    queryFn: () => getOrders("/orders", params),
 
     retry: false,
 
@@ -23,6 +23,15 @@ export const useOrders = () => {
     refetchOnWindowFocus: false,
   });
 };
+
+export const useAdminOrders = (params = {}) =>
+  useQuery({
+    queryKey: ["admin-orders", params],
+    queryFn: () => getOrders("/admin/orders", params),
+    retry: false,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
 // ===============================
 // CREATE ORDER
@@ -100,7 +109,7 @@ export const useUpdateOrder = () => {
 
   return useMutation({
     mutationFn: async ({ id, orderItems, status }) => {
-      const response = await api.patch(`/orders/${id}`, {
+      const response = await api.patch(`/admin/orders/${id}`, {
         orderItems,
         status,
       });
@@ -110,7 +119,7 @@ export const useUpdateOrder = () => {
 
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["orders"],
+        queryKey: ["admin-orders"],
       });
 
       toast.success(data.message || "Order updated successfully");
@@ -130,14 +139,14 @@ export const useDeleteOrder = () => {
 
   return useMutation({
     mutationFn: async (id) => {
-      const response = await api.delete(`/orders/${id}`);
+      const response = await api.delete(`/admin/orders/${id}`);
 
       return response.data;
     },
 
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["orders"],
+        queryKey: ["admin-orders"],
       });
 
       toast.success(data.message || "Order deleted successfully");

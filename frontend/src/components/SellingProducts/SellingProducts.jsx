@@ -12,7 +12,8 @@ const SellingProducts = () => {
 
   const [activeTab, setActiveTab] = useState("All");
 
-  const { data: products = [] } = useProducts();
+  const { data: productsResponse } = useProducts();
+  const products = productsResponse?.data ?? [];
 
   const { searchItem, addToCart } = useContext(StoreContext);
 

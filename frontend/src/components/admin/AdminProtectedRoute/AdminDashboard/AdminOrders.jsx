@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 
 import {
-  useOrders,
+  useAdminOrders,
   useCreateOrder,
   useUpdateOrder,
   useDeleteOrder,
@@ -32,6 +32,7 @@ import {
 
 import { useUsers } from "@/hooks/users/useUsers";
 import { useProducts } from "@/hooks/products/useProducts";
+import Pagination from "@/components/Pagination/Pagination";
 
 const STATUS_OPTIONS = [
   {
@@ -57,30 +58,35 @@ const STATUS_OPTIONS = [
 ];
 
 const Orders = () => {
+  const [page, setPage] = useState(1);
   // ===============================
   // ORDERS
   // ===============================
 
   const {
-    data: orders = [],
+    data: ordersResponse,
     isLoading,
     isError,
     error,
     refetch,
     isFetching,
-  } = useOrders();
+  } = useAdminOrders({ page });
+  const orders = ordersResponse?.data ?? [];
+  const pagination = ordersResponse?.pagination;
 
   // ===============================
   // USERS
   // ===============================
 
-  const { data: users = [], isLoading: usersLoading } = useUsers();
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({ limit: 100 });
+  const users = usersResponse?.data ?? [];
 
   // ===============================
   // PRODUCTS
   // ===============================
 
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: productsResponse, isLoading: productsLoading } = useProducts({ limit: 100 });
+  const products = productsResponse?.data ?? [];
 
   // ===============================
   // MUTATIONS
@@ -278,6 +284,7 @@ const Orders = () => {
       {
         onSuccess: async () => {
           closeDialog();
+          setPage(1);
 
           // Make sure latest orders are displayed
           await refetch();
@@ -339,6 +346,7 @@ const Orders = () => {
     deleteOrderMutation.mutate(deleteOrder._id, {
       onSuccess: async () => {
         setDeleteOrder(null);
+        setPage(1);
         await refetch();
       },
     });
@@ -657,6 +665,8 @@ const Orders = () => {
           })}
         </div>
       )}
+
+      <Pagination pagination={pagination} onPageChange={setPage} />
 
       {/* ==================================================
           CREATE / EDIT DIALOG

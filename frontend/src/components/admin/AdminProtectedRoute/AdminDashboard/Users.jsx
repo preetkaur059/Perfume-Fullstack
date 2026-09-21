@@ -2,17 +2,22 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 
 import { useUpdateUser, useUsers } from "@/hooks/users/useUsers";
+import Pagination from "@/components/Pagination/Pagination";
 
 const Users = () => {
+  const [page, setPage] = useState(1);
   // =========================
   // FETCH USERS
   // =========================
   const {
-    data: users = [],
+    data: usersResponse,
     isLoading,
     isError,
     error,
-  } = useUsers();
+  } = useUsers({ page });
+  const users = usersResponse?.data ?? [];
+  const pagination = usersResponse?.pagination;
+  const summary = usersResponse?.summary;
 
   // =========================
   // UPDATE USER MUTATION
@@ -110,15 +115,9 @@ const Users = () => {
   // =========================
   // STATISTICS
   // =========================
-  const totalUsers = users.length;
-
-  const adminUsers = users.filter(
-    (user) => user.isAdmin
-  ).length;
-
-  const normalUsers = users.filter(
-    (user) => !user.isAdmin
-  ).length;
+  const totalUsers = pagination?.total ?? 0;
+  const adminUsers = summary?.adminCount ?? 0;
+  const normalUsers = summary?.customerCount ?? 0;
 
   // =========================
   // LOADING STATE
@@ -313,7 +312,7 @@ const Users = () => {
 
                     {/* NUMBER */}
                     <td className="px-5 py-4 text-zinc-500">
-                      {index + 1}
+                      {(pagination?.page - 1) * (pagination?.limit || 10) + index + 1}
                     </td>
 
                     {/* USER */}
@@ -383,6 +382,10 @@ const Users = () => {
             </tbody>
 
           </table>
+        </div>
+
+        <div className="px-5 pb-5">
+          <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
 

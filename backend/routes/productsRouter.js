@@ -1,15 +1,11 @@
 import express from "express";
-import Product from "../models/product.js";
 import { createProduct, updateProduct, deleteProduct, getAllProducts, getSingleProduct} from "../controllers/productController.js";
 import isLoggedIn from "../middlewares/isLoggedIn.js";
 import isAdmin from "../middlewares/isAdmin.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-  const products = await Product.find({});
-  res.json(products);
-});
+router.get("/", getAllProducts);
 
 
 router.post("/", isLoggedIn, isAdmin, createProduct);

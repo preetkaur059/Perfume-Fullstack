@@ -5,9 +5,10 @@ import Cards from "../Cards/Cards";
 import { useProducts } from "@/hooks/products/useProducts";
 
 const Category = ({ type }) => {
-  const { data: products = [] } = useProducts();
+  const { data: productsResponse } = useProducts();
+  const products = productsResponse?.data ?? [];
 
- const filteredProducts =
+  const filteredProducts =
     type === "All"
       ? products
       : products.filter(

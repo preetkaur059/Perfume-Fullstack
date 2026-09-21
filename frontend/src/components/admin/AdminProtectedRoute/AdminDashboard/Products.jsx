@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import uploadToCloudinary from "@/utils/uploadToCloudinary";
+import Pagination from "@/components/Pagination/Pagination";
 
 const initialForm = {
   productName: "",
@@ -29,11 +30,14 @@ const Products = () => {
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const { data: products = [], isLoading, isError, error } = useProducts();
+  const { data: productsResponse, isLoading, isError, error } = useProducts({ page, search });
+  const products = productsResponse?.data ?? [];
+  const pagination = productsResponse?.pagination;
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -48,6 +52,10 @@ const Products = () => {
     },
     [imagePreview],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const handleChange = (e) => {
     setForm({
@@ -156,6 +164,7 @@ const Products = () => {
             : "Product created successfully",
         );
         closeForm();
+        if (!editingId) setPage(1);
       },
       onError: (mutationError) => {
         if (mutationError.response?.status === 401) {
@@ -179,7 +188,10 @@ const Products = () => {
     if (!confirmed) return;
 
     deleteProduct.mutate(id, {
-      onSuccess: () => toast.success("Product deleted successfully"),
+      onSuccess: () => {
+        toast.success("Product deleted successfully");
+        setPage(1);
+      },
       onError: (mutationError) => {
         if (mutationError.response?.status === 403) {
           toast.error("Admin access required");
@@ -192,9 +204,7 @@ const Products = () => {
     });
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.productName?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredProducts = products;
 
   return (
     <div className=" space-y-6">
@@ -519,6 +529,8 @@ const Products = () => {
           )}
         </CardContent>
       </Card>
+
+      <Pagination pagination={pagination} onPageChange={setPage} />
     </div>
   );
 };

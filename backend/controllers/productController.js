@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+import { createPagination, getPagination } from "../utils/pagination.js";
 
 
 // CREATE PRODUCT
@@ -10,7 +11,7 @@ const createProduct = async (req, res) => {
     if (!productName || !price || !category) {
       return res.status(400).json({
         success: false,
-        message: "Product name, price and category are required",
+        message: "Product name, price and category are required", 
       });
     }
 
@@ -101,11 +102,25 @@ const deleteProduct = async (req, res) => {
 // GET ALL PRODUCTS
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const { page, limit } = getPagination(req.query);
+    const filter = {};
 
-    return res.status(200).json(
-     products
-    );
+    if (req.query.search?.trim()) {
+      filter.productName = { $regex: req.query.search.trim(), $options: "i" };
+    }
+
+    if (req.query.category?.trim()) {
+      filter.category = { $regex: `^${req.query.category.trim()}$`, $options: "i" };
+    }
+
+    const total = await Product.countDocuments(filter);
+    const pagination = createPagination({ page, limit, total });
+    const products = await Product.find(filter)
+      .sort({ _id: -1 })
+      .skip((pagination.page - 1) * limit)
+      .limit(limit);
+
+    return res.status(200).json({ success: true, data: products, pagination });
 
   } catch (error) {
     return res.status(500).json({

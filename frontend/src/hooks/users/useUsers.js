@@ -1,19 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
 
-const getUsers = async () => {
-  const { data } = await api.get("/users/all");
-  return data.users ?? [];
+const getUsers = async ({ page = 1, limit = 10 } = {}) => {
+  const { data } = await api.get("/users/all", { params: { page, limit } });
+  return data;
 };
 
-export const useUsers = () =>
+export const useUsers = (params = {}) =>
   useQuery({
-    queryKey: ["users"],
-    queryFn: getUsers,
+    queryKey: ["users", params],
+    queryFn: () => getUsers(params),
   });
 
-const updateUser = async ({ userId, userData }) => {
-  const { data } = await api.patch(`/users/${userId}`, userData);
+const updateUser = async ({ id, userData }) => {
+  const { data } = await api.patch(`/users/${id}`, userData);
   return data.user;
 };
 
