@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Order from "../models/order.js";
 import Product from "../models/product.js";
-import User from "../models/user.js";
 
 const orderPopulate = [
   {
@@ -13,10 +12,6 @@ const orderPopulate = [
     select: "productName price image category",
   },
 ];
-
-const getRequester = async (userId) => {
-  return User.findById(userId).select("isAdmin");
-};
 
 const validateOrderItems = async (orderItems) => {
   if (!Array.isArray(orderItems) || orderItems.length === 0) {
@@ -59,10 +54,6 @@ const validateOrderItems = async (orderItems) => {
   return null;
 };
 
-const canManageOrder = (order, requester) =>
-  requester.isAdmin ||
-  order.user.equals(requester._id);
-
 
 // ===============================
 // CREATE ORDER
@@ -70,17 +61,6 @@ const canManageOrder = (order, requester) =>
 
 const createOrder = async (req, res) => {
   try {
-    const requester = await getRequester(
-      req.user.userId
-    );
-
-    if (!requester) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
     const validationError =
       await validateOrderItems(
         req.body.orderItems
@@ -93,35 +73,8 @@ const createOrder = async (req, res) => {
       });
     }
 
-    let userId = req.user.userId;
-
-    // Admin can create order for another customer
-    if (requester.isAdmin && req.body.user) {
-      if (
-        !mongoose.isValidObjectId(req.body.user)
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid customer ID.",
-        });
-      }
-
-      const customer = await User.findById(
-        req.body.user
-      );
-
-      if (!customer) {
-        return res.status(404).json({
-          success: false,
-          message: "Customer not found.",
-        });
-      }
-
-      userId = customer._id;
-    }
-
     const order = await Order.create({
-      user: userId,
+      user: req.user.userId,
       orderItems: req.body.orderItems,
       status:
         req.body.status || "Processing",
@@ -145,27 +98,14 @@ const createOrder = async (req, res) => {
 
 
 // ===============================
-// GET ALL ORDERS
+// CUSTOMER - GET OWN ORDERS
 // ===============================
 
 const getOrders = async (req, res) => {
   try {
-    const requester = await getRequester(
-      req.user.userId
-    );
-
-    if (!requester) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const filter = requester.isAdmin
-      ? {}
-      : { user: requester._id };
-
-    const orders = await Order.find(filter)
+    const orders = await Order.find({
+      user: req.user.userId,
+    })
       .populate(orderPopulate)
       .sort({ createdAt: -1 });
 
@@ -198,18 +138,10 @@ const getOrderById = async (req, res) => {
       });
     }
 
-    const [requester, order] =
-      await Promise.all([
-        getRequester(req.user.userId),
-        Order.findById(req.params.id),
-      ]);
-
-    if (!requester) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user.userId,
+    }).populate(orderPopulate);
 
     if (!order) {
       return res.status(404).json({
@@ -217,17 +149,6 @@ const getOrderById = async (req, res) => {
         message: "Order not found",
       });
     }
-
-    if (
-      !canManageOrder(order, requester)
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied.",
-      });
-    }
-
-    await order.populate(orderPopulate);
 
     return res.status(200).json({
       success: true,
@@ -258,18 +179,10 @@ const updateOrder = async (req, res) => {
       });
     }
 
-    const [requester, order] =
-      await Promise.all([
-        getRequester(req.user.userId),
-        Order.findById(req.params.id),
-      ]);
-
-    if (!requester) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user.userId,
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -278,16 +191,6 @@ const updateOrder = async (req, res) => {
       });
     }
 
-    if (
-      !canManageOrder(order, requester)
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied.",
-      });
-    }
-
-    // Update order items if provided
     if (req.body.orderItems) {
       const validationError =
         await validateOrderItems(
@@ -305,7 +208,6 @@ const updateOrder = async (req, res) => {
         req.body.orderItems;
     }
 
-    // Update status if provided
     if (req.body.status) {
       order.status = req.body.status;
     }
@@ -344,18 +246,10 @@ const deleteOrder = async (req, res) => {
       });
     }
 
-    const [requester, order] =
-      await Promise.all([
-        getRequester(req.user.userId),
-        Order.findById(req.params.id),
-      ]);
-
-    if (!requester) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user.userId,
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -364,12 +258,175 @@ const deleteOrder = async (req, res) => {
       });
     }
 
+    await order.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete order",
+      error: error.message,
+    });
+  }
+};
+
+
+// ===============================
+// ADMIN - GET ALL ORDERS
+// ===============================
+
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({})
+      .populate(orderPopulate)
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch all orders",
+      error: error.message,
+    });
+  }
+};
+
+
+// ===============================
+// ADMIN - GET SINGLE ORDER
+// ===============================
+
+const getAdminOrderById = async (req, res) => {
+  try {
     if (
-      !canManageOrder(order, requester)
+      !mongoose.isValidObjectId(req.params.id)
     ) {
-      return res.status(403).json({
+      return res.status(400).json({
         success: false,
-        message: "Access denied.",
+        message: "Invalid order ID.",
+      });
+    }
+
+    const order = await Order.findById(
+      req.params.id
+    ).populate(orderPopulate);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch order",
+      error: error.message,
+    });
+  }
+};
+
+
+// ===============================
+// ADMIN - UPDATE ORDER
+// ===============================
+
+const updateAdminOrder = async (req, res) => {
+  try {
+    if (
+      !mongoose.isValidObjectId(req.params.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID.",
+      });
+    }
+
+    const order = await Order.findById(
+      req.params.id
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (req.body.orderItems) {
+      const validationError =
+        await validateOrderItems(
+          req.body.orderItems
+        );
+
+      if (validationError) {
+        return res.status(400).json({
+          success: false,
+          message: validationError,
+        });
+      }
+
+      order.orderItems =
+        req.body.orderItems;
+    }
+
+    if (req.body.status) {
+      order.status = req.body.status;
+    }
+
+    await order.save();
+
+    await order.populate(orderPopulate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Order updated successfully",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update order",
+      error: error.message,
+    });
+  }
+};
+
+
+// ===============================
+// ADMIN - DELETE ORDER
+// ===============================
+
+const deleteAdminOrder = async (req, res) => {
+  try {
+    if (
+      !mongoose.isValidObjectId(req.params.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID.",
+      });
+    }
+
+    const order = await Order.findById(
+      req.params.id
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
       });
     }
 
@@ -394,4 +451,9 @@ export {
   getOrderById,
   updateOrder,
   deleteOrder,
+
+  getAllOrders,
+  getAdminOrderById,
+  updateAdminOrder,
+  deleteAdminOrder,
 };

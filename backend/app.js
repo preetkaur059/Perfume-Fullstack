@@ -5,6 +5,7 @@ import productsRouter from "./routes/productsRouter.js"
 import orderRouter from "./routes/orderRouter.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import adminOrderRoutes from "./routes/adminOrderRoutes.js";
 
     dotenv.config()
 
@@ -21,7 +22,8 @@ import cookieParser from "cookie-parser"
     app.use("/users", userRouter)
     app.use("/products", productsRouter)
     app.use("/orders", orderRouter)
-
+    
+    app.use("/admin/orders", adminOrderRoutes);
 
     app.get("/", (req, res)=>{
     res.json("You server is active")
