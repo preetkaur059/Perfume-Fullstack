@@ -1,6 +1,7 @@
 import express from "express";
 
 import {
+  createAdminOrder,
   getAllOrders,
   getAdminOrderById,
   updateAdminOrder,
@@ -14,6 +15,8 @@ const router = express.Router();
 
 router.use(isLoggedIn);
 router.use(isAdmin);
+
+router.post("/", createAdminOrder);
 
 router.get("/", getAllOrders);
 

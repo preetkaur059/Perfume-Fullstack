@@ -99,6 +99,50 @@ const createOrder = async (req, res) => {
 
 
 // ===============================
+// ADMIN - CREATE ORDER FOR A USER
+// ===============================
+
+const createAdminOrder = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.body.user)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid user ID is required.",
+      });
+    }
+
+    const validationError = await validateOrderItems(req.body.orderItems);
+
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
+
+    const order = await Order.create({
+      user: req.body.user,
+      orderItems: req.body.orderItems,
+      status: req.body.status || "Processing",
+    });
+
+    await order.populate(orderPopulate);
+
+    return res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create order",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
 // CUSTOMER - GET OWN ORDERS
 // ===============================
 
@@ -459,6 +503,7 @@ const deleteAdminOrder = async (req, res) => {
 
 export {
   createOrder,
+  createAdminOrder,
   getOrders,
   getOrderById,
   updateOrder,

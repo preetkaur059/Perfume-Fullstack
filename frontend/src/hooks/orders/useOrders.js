@@ -67,6 +67,34 @@ export const useCreateOrder = () => {
   });
 };
 
+export const useCreateAdminOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ user, orderItems, status }) => {
+      const response = await api.post("/admin/orders", {
+        user,
+        orderItems,
+        status,
+      });
+
+      return response.data;
+    },
+
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["admin-orders"],
+      });
+
+      toast.success(data.message || "Order created successfully");
+    },
+
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create order");
+    },
+  });
+};
+
 // ===============================
 // UPDATE ORDER
 // ===============================

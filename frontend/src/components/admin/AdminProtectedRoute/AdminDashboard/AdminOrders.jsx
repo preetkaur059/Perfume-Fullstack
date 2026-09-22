@@ -25,7 +25,7 @@ import {
 
 import {
   useAdminOrders,
-  useCreateOrder,
+  useCreateAdminOrder,
   useUpdateOrder,
   useDeleteOrder,
 } from "@/hooks/orders/useOrders";
@@ -92,7 +92,7 @@ const Orders = () => {
   // MUTATIONS
   // ===============================
 
-  const createOrderMutation = useCreateOrder();
+  const createOrderMutation = useCreateAdminOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrderMutation = useDeleteOrder();
 
