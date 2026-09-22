@@ -43,6 +43,7 @@ import {
 import { useUsers } from "@/hooks/users/useUsers";
 import { useProducts } from "@/hooks/products/useProducts";
 import Pagination from "@/components/Pagination/Pagination";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const STATUS_OPTIONS = [
   { value: "Processing", label: "Processing" },
@@ -443,16 +444,21 @@ const Orders = () => {
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Admin Orders
-            </h1>
-            <span className="rounded-full border border-lime-400/30 bg-lime-400/10 px-2.5 py-0.5 text-xs font-semibold text-lime-300">
-              Management Dashboard
-            </span>
+            <SidebarTrigger className="h-9 w-9 rounded-xl border border-[#222] bg-[#111] text-gray-400 hover:border-lime-400/40 hover:text-lime-300 transition" />
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Admin Orders
+                </h1>
+                <span className="rounded-full border border-lime-400/30 bg-lime-400/10 px-2.5 py-0.5 text-xs font-semibold text-lime-300">
+                  Management Dashboard
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-gray-400">
+                Monitor, inspect, and fulfill all customer orders across the platform.
+              </p>
+            </div>
           </div>
-          <p className="mt-1 text-sm text-gray-400">
-            Monitor, inspect, and fulfill all customer orders across the platform.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

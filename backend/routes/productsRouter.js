@@ -4,6 +4,7 @@ import {
   updateProduct,
   deleteProduct,
   getAllProducts,
+  getProductStats,
   getSingleProduct,
   uploadProductImage,
 } from "../controllers/productController.js";
@@ -13,6 +14,7 @@ import { uploadImage } from "../middlewares/upload.js";
 
 const router = express.Router();
 
+router.get("/stats", getProductStats);
 router.get("/", getAllProducts);
 router.get("/all", getAllProducts);
 

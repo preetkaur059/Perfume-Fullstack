@@ -110,14 +110,45 @@ const getAllProducts = async (req, res) => {
       filter.productName = { $regex: req.query.search.trim(), $options: "i" };
     }
 
-    if (req.query.category?.trim()) {
+    if (req.query.category?.trim() && req.query.category.trim().toLowerCase() !== "all") {
       filter.category = { $regex: `^${req.query.category.trim()}$`, $options: "i" };
+    }
+
+    let sortQuery = { _id: -1 };
+    if (req.query.sort) {
+      switch (req.query.sort) {
+        case "oldest":
+          sortQuery = { _id: 1 };
+          break;
+        case "lowest_price":
+        case "price_asc":
+          sortQuery = { price: 1 };
+          break;
+        case "highest_price":
+        case "price_desc":
+          sortQuery = { price: -1 };
+          break;
+        case "highest_rating":
+        case "rating_desc":
+          sortQuery = { rating: -1 };
+          break;
+        case "name_asc":
+          sortQuery = { productName: 1 };
+          break;
+        case "name_desc":
+          sortQuery = { productName: -1 };
+          break;
+        case "newest":
+        default:
+          sortQuery = { _id: -1 };
+          break;
+      }
     }
 
     const total = await Product.countDocuments(filter);
     const pagination = createPagination({ page, limit, total });
     const products = await Product.find(filter)
-      .sort({ _id: -1 })
+      .sort(sortQuery)
       .skip((pagination.page - 1) * limit)
       .limit(limit);
 
@@ -127,6 +158,38 @@ const getAllProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch products",
+      error: error.message,
+    });
+  }
+};
+
+// GET PRODUCT STATS
+const getProductStats = async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    const menProducts = await Product.countDocuments({
+      category: { $regex: /^men$/i },
+    });
+    const womenProducts = await Product.countDocuments({
+      category: { $regex: /^women$/i },
+    });
+    const unisexProducts = await Product.countDocuments({
+      category: { $regex: /^unisex$/i },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalProducts,
+        menProducts,
+        womenProducts,
+        unisexProducts,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch product statistics",
       error: error.message,
     });
   }
@@ -198,6 +261,7 @@ export {
   updateProduct,
   deleteProduct,
   getAllProducts,
+  getProductStats,
   getSingleProduct,
   uploadProductImage,
 };

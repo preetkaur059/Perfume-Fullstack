@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import User from "../models/user.js";
+import Order from "../models/order.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { createPagination, getPagination } from "../utils/pagination.js";
@@ -8,22 +10,84 @@ import { createPagination, getPagination } from "../utils/pagination.js";
 const getUsers = async (req, res) => {
   try {
     const { page, limit } = getPagination(req.query);
-    const total = await User.countDocuments();
+    const filter = {};
+
+    if (req.query.search?.trim()) {
+      const searchRegex = { $regex: req.query.search.trim(), $options: "i" };
+      filter.$or = [{ fullName: searchRegex }, { email: searchRegex }];
+    }
+
+    if (req.query.role?.trim() && req.query.role.trim().toLowerCase() !== "all") {
+      const r = req.query.role.trim().toLowerCase();
+      if (r === "admin") {
+        filter.isAdmin = true;
+      } else if (r === "customer" || r === "user") {
+        filter.isAdmin = false;
+      }
+    }
+
+    let sortQuery = { _id: -1 };
+    if (req.query.sort) {
+      switch (req.query.sort) {
+        case "oldest":
+          sortQuery = { _id: 1 };
+          break;
+        case "name_asc":
+          sortQuery = { fullName: 1 };
+          break;
+        case "name_desc":
+          sortQuery = { fullName: -1 };
+          break;
+        case "newest":
+        default:
+          sortQuery = { _id: -1 };
+          break;
+      }
+    }
+
+    const total = await User.countDocuments(filter);
     const pagination = createPagination({ page, limit, total });
-    const users = await User.find()
+    const users = await User.find(filter)
       .select("-password")
-      .sort({ _id: -1 })
+      .sort(sortQuery)
       .skip((pagination.page - 1) * limit)
       .limit(limit);
+
+    // Aggregate order counts for returned users
+    const userIds = users.map((u) => u._id);
+    const orderCounts = await Order.aggregate([
+      { $match: { user: { $in: userIds } } },
+      { $group: { _id: "$user", count: { $sum: 1 } } },
+    ]);
+
+    const orderCountMap = {};
+    orderCounts.forEach((item) => {
+      orderCountMap[item._id.toString()] = item.count;
+    });
+
+    let usersWithDetails = users.map((u) => {
+      const userObj = u.toObject();
+      userObj.orderCount = orderCountMap[u._id.toString()] || 0;
+      return userObj;
+    });
+
+    if (req.query.sort === "most_orders") {
+      usersWithDetails = usersWithDetails.sort(
+        (a, b) => (b.orderCount || 0) - (a.orderCount || 0)
+      );
+    }
+
     const adminCount = await User.countDocuments({ isAdmin: true });
+    const customerCount = await User.countDocuments({ isAdmin: false });
 
     return res.status(200).json({
       success: true,
-      data: users,
+      data: usersWithDetails,
       pagination,
       summary: {
         adminCount,
-        customerCount: total - adminCount,
+        customerCount,
+        totalUsers: total,
       },
     });
 
@@ -33,6 +97,79 @@ const getUsers = async (req, res) => {
     return res.status(500).json({
       success: false,
       msg: "Server error",
+    });
+  }
+};
+
+// GET USER STATS
+const getUserStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const adminCount = await User.countDocuments({ isAdmin: true });
+    const customerCount = await User.countDocuments({ isAdmin: false });
+
+    // Users created in the last 30 days based on ObjectId timestamp
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const timestampHex = Math.floor(thirtyDaysAgo.getTime() / 1000)
+      .toString(16)
+      .padEnd(24, "0");
+    const minObjectId = new mongoose.Types.ObjectId(timestampHex);
+
+    const newUsersCount = await User.countDocuments({
+      _id: { $gte: minObjectId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        customerCount,
+        adminCount,
+        newUsersCount,
+      },
+    });
+  } catch (error) {
+    console.log("Get user stats error:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Failed to fetch user statistics",
+      error: error.message,
+    });
+  }
+};
+
+// DELETE USER
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent self-deletion if current admin is logged in
+    if (req.user?.userId && req.user.userId.toString() === id.toString()) {
+      return res.status(400).json({
+        success: false,
+        msg: "You cannot delete your own admin account.",
+      });
+    }
+
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      msg: "User deleted successfully",
+    });
+  } catch (error) {
+    console.log("Delete user error:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Failed to delete user",
+      error: error.message,
     });
   }
 };
@@ -292,7 +429,9 @@ const updateUser = async (req, res) => {
 
     user.fullName = fullName;
     user.email = email;
-    user.isAdmin = isAdmin;
+    if (typeof isAdmin === "boolean") {
+      user.isAdmin = isAdmin;
+    }
 
     await user.save();
 
@@ -320,6 +459,8 @@ const updateUser = async (req, res) => {
 
 export {
   getUsers,
+  getUserStats,
+  deleteUser,
   registerUser,
   loginUser,
   refreshAccessToken,

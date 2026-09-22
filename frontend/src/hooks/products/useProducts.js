@@ -1,9 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
 
-const getProducts = async ({ page = 1, limit = 10, search = "", category = "" } = {}) => {
+const getProducts = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  category = "",
+  sort = "newest",
+} = {}) => {
   const { data } = await api.get("/products", {
-    params: { page, limit, ...(search && { search }), ...(category && { category }) },
+    params: {
+      page,
+      limit,
+      ...(search && { search }),
+      ...(category && category !== "All" && { category }),
+      ...(sort && { sort }),
+    },
   });
   return data;
 };
@@ -12,6 +24,17 @@ export const useProducts = (params = {}) =>
   useQuery({
     queryKey: ["products", params],
     queryFn: () => getProducts(params),
+  });
+
+const getProductStats = async () => {
+  const { data } = await api.get("/products/stats");
+  return data;
+};
+
+export const useProductStats = () =>
+  useQuery({
+    queryKey: ["productStats"],
+    queryFn: getProductStats,
   });
 
 const getProduct = async (productId) => {
@@ -36,7 +59,10 @@ export const useCreateProduct = () => {
 
   return useMutation({
     mutationFn: createProduct,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productStats"] });
+    },
   });
 };
 
@@ -52,6 +78,7 @@ export const useUpdateProduct = () => {
     mutationFn: updateProduct,
     onSuccess: (product) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productStats"] });
       queryClient.invalidateQueries({ queryKey: ["product", product._id] });
     },
   });
@@ -69,6 +96,7 @@ export const useDeleteProduct = () => {
     mutationFn: deleteProduct,
     onSuccess: (productId) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productStats"] });
       queryClient.removeQueries({ queryKey: ["product", productId] });
     },
   });
