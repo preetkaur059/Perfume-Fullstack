@@ -1,5 +1,6 @@
 import Product from "../models/product.js";
 import { createPagination, getPagination } from "../utils/pagination.js";
+import cloudinary from "../config/cloudinary.js";
 
 
 // CREATE PRODUCT
@@ -161,10 +162,43 @@ const getSingleProduct = async (req, res) => {
 };
 
 
+// UPLOAD PRODUCT IMAGE (Signed Cloudinary Upload)
+const uploadProductImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select an image file to upload",
+      });
+    }
+
+    // Convert file buffer to base64 Data URI for Cloudinary
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+
+    const uploadResult = await cloudinary.uploader.upload(base64Image, {
+      folder: "products",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      imageUrl: uploadResult.secure_url,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload image",
+      error: error.message,
+    });
+  }
+};
+
 export {
   createProduct,
   updateProduct,
   deleteProduct,
   getAllProducts,
   getSingleProduct,
+  uploadProductImage,
 };
+

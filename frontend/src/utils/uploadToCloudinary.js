@@ -1,11 +1,10 @@
-import axios from "axios";
+import api from "@/api/client";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 /**
- * Uploads an image directly to Cloudinary using an unsigned upload preset.
- * This intentionally does not use the application's Axios client, because the
- * request must go to Cloudinary rather than the API base URL.
+ * Uploads an image via the backend signed Cloudinary upload endpoint.
+ * The backend uses Multer to handle the file upload and securely signs the request with Cloudinary.
  */
 const uploadToCloudinary = async (file) => {
   if (!file) {
@@ -20,33 +19,24 @@ const uploadToCloudinary = async (file) => {
     throw new Error("Image must be 5 MB or smaller");
   }
 
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error(
-      "Cloudinary is not configured. Add the cloud name and upload preset to frontend/.env",
-    );
-  }
-
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
+  formData.append("image", file);
 
   try {
-    const { data } = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      formData,
-    );
+    const { data } = await api.post("/products/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-    if (!data.secure_url) {
-      throw new Error("Cloudinary did not return an image URL");
+    if (!data.imageUrl) {
+      throw new Error("Server did not return an image URL");
     }
 
-    return data.secure_url;
+    return data.imageUrl;
   } catch (error) {
-    const cloudinaryMessage = error.response?.data?.error?.message;
-    throw new Error(cloudinaryMessage || error.message || "Failed to upload image");
+    const serverMessage = error.response?.data?.message;
+    throw new Error(serverMessage || error.message || "Failed to upload image");
   }
 };
 
