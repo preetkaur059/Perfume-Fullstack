@@ -18,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 const AdminSidebar = () => {
@@ -64,7 +65,6 @@ const AdminSidebar = () => {
               <h1 className="text-xl font-bold tracking-[0.3em] text-lime-400">
                 ZIVARA
               </h1>
-
               <p className="mt-1 text-xs text-gray-500">ADMIN PANEL</p>
             </div>
           </SidebarGroupLabel>
@@ -86,10 +86,9 @@ const AdminSidebar = () => {
                         className={({ isActive }) =>
                           `group flex w-full items-center gap-3 rounded-lg px-4 py-3
                           transition-all duration-200
-                          ${
-                            isActive
-                              ? "bg-lime-400 text-black"
-                              : "text-gray-400 hover:bg-[#222] hover:text-white"
+                          ${isActive
+                            ? "bg-lime-400 text-black"
+                            : "text-gray-400 hover:bg-[#222] hover:text-white"
                           }`
                         }
                       >

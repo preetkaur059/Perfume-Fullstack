@@ -6,8 +6,8 @@ import { toast } from "react-toastify";
 // ===============================
 // GET ORDERS
 // ===============================
-const getOrders = async (url, { page = 1, limit = 10 } = {}) => {
-  const { data } = await api.get(url, { params: { page, limit } });
+const getOrders = async (url, params = {}) => {
+  const { data } = await api.get(url, { params });
   return data;
 };
 
@@ -28,6 +28,18 @@ export const useAdminOrders = (params = {}) =>
   useQuery({
     queryKey: ["admin-orders", params],
     queryFn: () => getOrders("/admin/orders", params),
+    retry: false,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+export const useAdminOrderStats = () =>
+  useQuery({
+    queryKey: ["admin-order-stats"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/orders/stats");
+      return data;
+    },
     retry: false,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
@@ -85,6 +97,9 @@ export const useCreateAdminOrder = () => {
       queryClient.invalidateQueries({
         queryKey: ["admin-orders"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-order-stats"],
+      });
 
       toast.success(data.message || "Order created successfully");
     },
@@ -98,40 +113,6 @@ export const useCreateAdminOrder = () => {
 // ===============================
 // UPDATE ORDER
 // ===============================
-// export const useUpdateOrder = () => {
-//   const queryClient = useQueryClient();
-
-//   return useMutation({
-//     mutationFn: async ({ id, orderItems }) => {
-//       const response = await api.patch(
-//         `/orders/${id}`,
-//         {
-//           orderItems,
-//         }
-//       );
-
-//       return response.data;
-//     },
-
-//     onSuccess: (data) => {
-//       queryClient.invalidateQueries({
-//         queryKey: ["orders"],
-//       });
-
-//       toast.success(
-//         data.message || "Order updated successfully"
-//       );
-//     },
-
-//     onError: (error) => {
-//       toast.error(
-//         error.response?.data?.message ||
-//           "Failed to update order"
-//       );
-//     },
-//   });
-// };
-
 export const useUpdateOrder = () => {
   const queryClient = useQueryClient();
 
@@ -148,6 +129,9 @@ export const useUpdateOrder = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["admin-orders"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-order-stats"],
       });
 
       toast.success(data.message || "Order updated successfully");
@@ -175,6 +159,9 @@ export const useDeleteOrder = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["admin-orders"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-order-stats"],
       });
 
       toast.success(data.message || "Order deleted successfully");

@@ -6,6 +6,7 @@ import {
   getAdminOrderById,
   updateAdminOrder,
   deleteAdminOrder,
+  getAdminOrderStats,
 } from "../controllers/orderController.js";
 
 import isLoggedIn from "../middlewares/isLoggedIn.js";
@@ -17,6 +18,8 @@ router.use(isLoggedIn);
 router.use(isAdmin);
 
 router.post("/", createAdminOrder);
+
+router.get("/stats", getAdminOrderStats);
 
 router.get("/", getAllOrders);
 

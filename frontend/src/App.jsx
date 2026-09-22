@@ -71,7 +71,7 @@ const App = () => {
           },
           {
             path: '/forgot-password',
-            element: <ForgotPassword/>,
+            element: <ForgotPassword />,
           },
           {
             path: '/checkout',
@@ -120,32 +120,32 @@ const App = () => {
       element: <AdminProtectedRoute />,
       children: [
         {
-        element: <AdminDashboard />,
-        children: [
-          {
-            index: true,
-            element: <Dashboard />,
-          },
-          {
-            path: "products",
-            element: <Products />,
-          },
-          {
-            path: "AdminOrders",
-            element: <AdminOrders />,
-          },
-          {
-            path: "users",
-            element: <Users />,
-          },
-          {
-            path: "settings",
-            element: <Settings />,
-          },
-        ],
-      },
-    ],
-  },
+          element: <AdminDashboard />,
+          children: [
+            {
+              index: true,
+              element: <Dashboard />,
+            },
+            {
+              path: "products",
+              element: <Products />,
+            },
+            {
+              path: "AdminOrders",
+              element: <AdminOrders />,
+            },
+            {
+              path: "users",
+              element: <Users />,
+            },
+            {
+              path: "settings",
+              element: <Settings />,
+            },
+          ],
+        },
+      ],
+    },
   ])
   return (
     <StoreProvider>

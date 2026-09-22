@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { createPagination, getPagination } from "../utils/pagination.js";
 import Order from "../models/order.js";
 import Product from "../models/product.js";
+import User from "../models/user.js";
 
 const orderPopulate = [
   {
@@ -104,10 +105,20 @@ const createOrder = async (req, res) => {
 
 const createAdminOrder = async (req, res) => {
   try {
-    if (!mongoose.isValidObjectId(req.body.user)) {
+    const customerId = req.body.user;
+
+    if (!customerId || !mongoose.isValidObjectId(customerId)) {
       return res.status(400).json({
         success: false,
-        message: "A valid user ID is required.",
+        message: "A valid customer ID is required.",
+      });
+    }
+
+    const customer = await User.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected customer does not exist.",
       });
     }
 
@@ -121,7 +132,7 @@ const createAdminOrder = async (req, res) => {
     }
 
     const order = await Order.create({
-      user: req.body.user,
+      user: customer._id,
       orderItems: req.body.orderItems,
       status: req.body.status || "Processing",
     });
@@ -331,13 +342,132 @@ const deleteOrder = async (req, res) => {
 const getAllOrders = async (req, res) => {
   try {
     const { page, limit } = getPagination(req.query);
-    const total = await Order.countDocuments();
+    const { search, status, customer, sort = "newest" } = req.query;
+
+    const filter = {};
+
+    // 1. Status Filter
+    if (status && status !== "All") {
+      filter.status = status;
+    }
+
+    // 2. Customer Filter
+    if (customer && customer !== "All" && mongoose.isValidObjectId(customer)) {
+      filter.user = new mongoose.Types.ObjectId(customer);
+    }
+
+    // 3. Search Filter (by customer name, email, or order ID)
+    if (search && search.trim()) {
+      const trimmedSearch = search.trim();
+      const escapedSearch = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const matchingUsers = await User.find({
+        $or: [
+          { fullName: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+        ],
+      }).select("_id");
+
+      const userIds = matchingUsers.map((u) => u._id);
+      const searchOr = [];
+
+      if (userIds.length > 0) {
+        searchOr.push({ user: { $in: userIds } });
+      }
+
+      if (mongoose.isValidObjectId(trimmedSearch)) {
+        searchOr.push({ _id: new mongoose.Types.ObjectId(trimmedSearch) });
+      } else {
+        searchOr.push({
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$_id" },
+              regex: escapedSearch,
+              options: "i",
+            },
+          },
+        });
+      }
+
+      filter.$or = searchOr;
+    }
+
+    const total = await Order.countDocuments(filter);
     const pagination = createPagination({ page, limit, total });
-    const orders = await Order.find({})
-      .populate(orderPopulate)
-      .sort({ createdAt: -1 })
-      .skip((pagination.page - 1) * limit)
-      .limit(limit);
+
+    let sortOptions = { createdAt: -1 };
+    let needsAmountSort = false;
+
+    if (sort === "oldest") {
+      sortOptions = { createdAt: 1 };
+    } else if (sort === "highest_amount" || sort === "lowest_amount") {
+      needsAmountSort = true;
+    }
+
+    let orders;
+
+    if (needsAmountSort) {
+      const sortDirection = sort === "highest_amount" ? -1 : 1;
+      orders = await Order.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: "products",
+            localField: "orderItems.product",
+            foreignField: "_id",
+            as: "productDetails",
+          },
+        },
+        {
+          $addFields: {
+            totalAmount: {
+              $sum: {
+                $map: {
+                  input: "$orderItems",
+                  as: "item",
+                  in: {
+                    $multiply: [
+                      { $ifNull: ["$$item.quantity", 1] },
+                      {
+                        $let: {
+                          vars: {
+                            matchedProduct: {
+                              $arrayElemAt: [
+                                {
+                                  $filter: {
+                                    input: "$productDetails",
+                                    as: "p",
+                                    cond: { $eq: ["$$p._id", "$$item.product"] },
+                                  },
+                                },
+                                0,
+                              ],
+                            },
+                          },
+                          in: { $ifNull: ["$$matchedProduct.price", 0] },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+        { $sort: { totalAmount: sortDirection, createdAt: -1 } },
+        { $skip: (pagination.page - 1) * limit },
+        { $limit: limit },
+        { $project: { productDetails: 0 } },
+      ]);
+
+      await Order.populate(orders, orderPopulate);
+    } else {
+      orders = await Order.find(filter)
+        .populate(orderPopulate)
+        .sort(sortOptions)
+        .skip((pagination.page - 1) * limit)
+        .limit(limit);
+    }
 
     return res.status(200).json({
       success: true,
@@ -352,6 +482,156 @@ const getAllOrders = async (req, res) => {
     });
   }
 };
+
+
+// ===============================
+// ADMIN - ORDER STATS
+// ===============================
+
+const getAdminOrderStats = async (req, res) => {
+  try {
+    const totalOrders = await Order.countDocuments();
+    const totalCustomers = await User.countDocuments({ isAdmin: false });
+
+    const orderAgg = await Order.aggregate([
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.product",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      {
+        $project: {
+          status: 1,
+          items: {
+            $map: {
+              input: "$orderItems",
+              as: "item",
+              in: {
+                quantity: "$$item.quantity",
+                price: {
+                  $let: {
+                    vars: {
+                      matchedProduct: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: "$productDetails",
+                              as: "p",
+                              cond: { $eq: ["$$p._id", "$$item.product"] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                    in: { $ifNull: ["$$matchedProduct.price", 0] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          status: 1,
+          orderTotal: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "i",
+                in: { $multiply: ["$$i.quantity", "$$i.price"] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: {
+            $sum: {
+              $cond: [{ $ne: ["$status", "Cancelled"] }, "$orderTotal", 0],
+            },
+          },
+          deliveredSales: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Delivered"] }, "$orderTotal", 0],
+            },
+          },
+          pendingOrders: {
+            $sum: {
+              $cond: [{ $in: ["$status", ["Processing", "Confirmed", "Shipped"]] }, 1, 0],
+            },
+          },
+          processingOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Processing"] }, 1, 0],
+            },
+          },
+          confirmedOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Confirmed"] }, 1, 0],
+            },
+          },
+          shippedOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Shipped"] }, 1, 0],
+            },
+          },
+          deliveredOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Delivered"] }, 1, 0],
+            },
+          },
+          cancelledOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Cancelled"] }, 1, 0],
+            },
+          },
+          activeOrdersCount: {
+            $sum: {
+              $cond: [{ $ne: ["$status", "Cancelled"] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const result = orderAgg[0] || {};
+    const totalSales = result.totalSales || 0;
+    const deliveredSales = result.deliveredSales || 0;
+    const activeCount = result.activeOrdersCount || 0;
+    const avgOrderValue = activeCount > 0 ? Math.round(totalSales / activeCount) : 0;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalOrders,
+        totalSales,
+        deliveredSales,
+        totalCustomers,
+        pendingOrders: result.pendingOrders || 0,
+        processingOrders: result.processingOrders || 0,
+        confirmedOrders: result.confirmedOrders || 0,
+        shippedOrders: result.shippedOrders || 0,
+        deliveredOrders: result.deliveredOrders || 0,
+        cancelledOrders: result.cancelledOrders || 0,
+        averageOrderValue: avgOrderValue,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch order statistics",
+      error: error.message,
+    });
+  }
+};
+
 
 
 // ===============================
@@ -513,4 +793,5 @@ export {
   getAdminOrderById,
   updateAdminOrder,
   deleteAdminOrder,
+  getAdminOrderStats,
 };
