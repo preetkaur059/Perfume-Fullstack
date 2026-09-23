@@ -137,13 +137,13 @@ const Navbar = () => {
                     </div>
 
                     {/* wishlist */}
-                    <Link to='/wishlist' className='text-white relative text-3xl hover:text-lime-200'>
+                    {/* <Link to='/wishlist' className='text-white relative text-3xl hover:text-lime-200'>
                         <IoHeartSharp />
                         {
                             wishlist.length > 0 && (
                             <span className='flex justify-center items-center text-lg bg-lime-300 text-black w-5 h-5 p-3 rounded-full absolute left-4 top-4'>{wishlist.length}</span>)
                         }
-                    </Link>
+                    </Link> */}
 
                     {/* cart */}
                     <Link to='/cart' className='text-white relative text-3xl hover:text-lime-200'>
@@ -164,11 +164,10 @@ const Navbar = () => {
                             aria-label="Open account menu"
                             aria-expanded={showUserMenu}
                             onClick={() => setShowUserMenu((isOpen) => !isOpen)}
-                            className={`flex h-10 w-10 items-center justify-center transition duration-300 cursor-pointer ${
-                                user
-                                    ? "rounded-full bg-gradient-to-b from-lime-200 to-lime-300 text-black font-bold"
-                                    : "text-3xl text-white hover:text-lime-200"
-                            }`}
+                            className={`flex h-10 w-10 items-center justify-center transition duration-300 cursor-pointer ${user
+                                ? "rounded-full bg-gradient-to-b from-lime-200 to-lime-300 text-black font-bold"
+                                : "text-3xl text-white hover:text-lime-200"
+                                }`}
                         >
                             {user ? user.fullName?.split(" ").map((name) => name[0]).join("").toUpperCase() : <FaUserAlt />}
                         </button>
@@ -183,7 +182,21 @@ const Navbar = () => {
                                         </div>
                                         <Link to="/profile" onClick={handleLinkClick} className="account-menu-link"><FaUser /> Profile</Link>
                                         <Link to="/Orders" onClick={handleLinkClick} className="account-menu-link"><FaBoxOpen /> My Orders</Link>
-                                        <Link to="/wishlist" onClick={handleLinkClick} className="account-menu-link"><IoHeartSharp /> Wishlist</Link>
+                                        <Link
+                                            to="/wishlist"
+                                            onClick={handleLinkClick}
+                                            className="account-menu-link relative"
+                                        >
+                                            <IoHeartSharp />
+
+                                            {wishlist.length > 0 && (
+                                                <span className="flex justify-center items-center bg-lime-300 text-black w-3 h-3 p-1.5 rounded-full absolute left-4 top-1">
+                                                    {wishlist.length}
+                                                </span>
+                                            )}
+
+                                            Wishlist
+                                        </Link>
                                         <Link to="/cart" onClick={handleLinkClick} className="account-menu-link"><FaShoppingCart /> Cart</Link>
                                         <button type="button" onClick={handleLogout} disabled={logout.isPending} className="account-menu-link w-full text-left text-red-300 hover:!bg-red-500/10 hover:!text-red-200"><FaSignOutAlt /> {logout.isPending ? "Logging out..." : "Logout"}</button>
                                     </>
@@ -209,14 +222,14 @@ const Navbar = () => {
                 items-center justify-center md:hidden top-30 -left-full transform -translate-x-1/2
                 transition-all duration-300 gap-12 text-2xl`}>
                     <NavLink to="/" className='font-semibold tracking-wider text-lime-300'>Home</NavLink>
-                    <NavLink to="/Allproducts"  onClick={handleLinkClick} className='font-semibold tracking-wider text-white hover:text-lime-300'>All Products</NavLink>
+                    <NavLink to="/Allproducts" onClick={handleLinkClick} className='font-semibold tracking-wider text-white hover:text-lime-300'>All Products</NavLink>
                     <div className="relative">
 
                         {/* Categories Button */}
                         <div className="relative"
                             onMouseEnter={() => setOpen(true)}
                             onMouseLeave={() => setOpen(false)}>
-                            <span className={`font-medium cursor-pointer tracking-wider ${isCategoryActive ? "text-lime-200" : "text-white hover:text-lime-200" }`}>
+                            <span className={`font-medium cursor-pointer tracking-wider ${isCategoryActive ? "text-lime-200" : "text-white hover:text-lime-200"}`}>
                                 Categories
                             </span>
 
@@ -225,19 +238,19 @@ const Navbar = () => {
                                 <div className="absolute top-8 left-0 w-40 bg-[#1a1a1a] text-white rounded shadow-lg border border-gray-700 overflow-hidden transition-all duration-300 z-50">
 
                                     <NavLink
-                                        to="/Men"  onClick={handleLinkClick}
+                                        to="/Men" onClick={handleLinkClick}
                                         className={` block px-4 py-2 hover:bg-[#272727] transition-colors duration-200`}>
                                         Men
                                     </NavLink>
 
                                     <NavLink
-                                        to="/Women"  onClick={handleLinkClick}
+                                        to="/Women" onClick={handleLinkClick}
                                         className="block px-4 py-2 hover:bg-[#272727] transition-colors duration-200">
                                         Women
                                     </NavLink>
 
                                     <NavLink
-                                        to="/Unisex"  onClick={handleLinkClick}
+                                        to="/Unisex" onClick={handleLinkClick}
                                         className="block px-4 py-2 hover:bg-[#272727] transition-colors duration-200">
                                         Unisex
                                     </NavLink>
@@ -248,7 +261,7 @@ const Navbar = () => {
 
                     </div>
                     {/* <NavLink href="Process" className='font-semibold tracking-wider text-white hover:text-lime-300'>Process</NavLink> */}
-                    <NavLink to="/Contact"  onClick={handleLinkClick} className='font-semibold tracking-wider text-white  hover:text-lime-300'>Contact Us</NavLink>
+                    <NavLink to="/Contact" onClick={handleLinkClick} className='font-semibold tracking-wider text-white  hover:text-lime-300'>Contact Us</NavLink>
 
                     <div className="flex md:hidden text-white border-lime-500 border-2 rounded-xl">
                         <input type="text" name='text' id='text' className='flex-1 text-white h-[5vh] px-3 focus:outline-none' placeholder='Search perfume...' autoComplete='off' />
@@ -256,7 +269,7 @@ const Navbar = () => {
                             <FaSearch />
                         </button>
                     </div>
-                </div> 
+                </div>
             </nav>
         </header>
     )
