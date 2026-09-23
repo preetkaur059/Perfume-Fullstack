@@ -13,7 +13,7 @@ import { useLogout } from "@/hooks/auth/useAuth";
 import { toast } from "react-toastify";
 
 const Navbar = () => {
-    const { wishlist, setSearchItem, cartCount } = useContext(StoreContext);
+    const { wishlist, setSearchItem, searchItem, cartCount } = useContext(StoreContext);
     const { data: user } = useCurrentUser();
     const logout = useLogout();
     const navigate = useNavigate();
@@ -40,6 +40,20 @@ const Navbar = () => {
     const handleLinkClick = () => {
         setShowMenu(false); // menu close
         setShowUserMenu(false);
+    };
+
+    const handleSearchChange = (event) => {
+        const value = event.target.value;
+        setSearchItem(value);
+
+        // Searching from pages outside the catalogue should show the full
+        // server-filtered result list. Category pages keep their category filter.
+        if (
+            value.trim() &&
+            !["/Allproducts", "/Men", "/Women", "/Unisex"].includes(location.pathname)
+        ) {
+            navigate("/Allproducts");
+        }
     };
 
     const handleLogout = async () => {
@@ -127,9 +141,9 @@ const Navbar = () => {
                     <div className="md:flex hidden border-lime-300 text-white border-2 rounded-xl">
 
                         {/* search bar  */}
-                        <input type="text" name='text' id='text' className='flex-1 h-[5vh] px-3 focus:outline-none'
+                        <input type="text" name='text' id='text' value={searchItem} className='flex-1 h-[5vh] px-3 focus:outline-none'
                             onFocus={handleScroll}
-                            onChange={(e) => setSearchItem(e.target.value)}
+                            onChange={handleSearchChange}
                             placeholder='Search perfume...' autoComplete='off' />
                         <button className='h-10 w-10 cursor-pointer text-black flex justify-center items-center rounded-xl text-2xl bg-gradient-to-b from-lime-200 to-lime-300 '>
                             <FaSearch className='bg- z-99' />
@@ -264,7 +278,7 @@ const Navbar = () => {
                     <NavLink to="/Contact" onClick={handleLinkClick} className='font-semibold tracking-wider text-white  hover:text-lime-300'>Contact Us</NavLink>
 
                     <div className="flex md:hidden text-white border-lime-500 border-2 rounded-xl">
-                        <input type="text" name='text' id='text' className='flex-1 text-white h-[5vh] px-3 focus:outline-none' placeholder='Search perfume...' autoComplete='off' />
+                        <input type="text" name='text' id='text' value={searchItem} onChange={handleSearchChange} className='flex-1 text-white h-[5vh] px-3 focus:outline-none' placeholder='Search perfume...' autoComplete='off' />
                         <button className='h-10 w-10 text-white flex justify-center items-center rounded-lg text-xl bg-gradient-to-b from-lime-400 to-lime-500 '>
                             <FaSearch />
                         </button>
