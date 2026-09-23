@@ -3,6 +3,11 @@ import { motion } from "framer-motion";
 import perfumeImg from "../../assets/g2.png";
 import bgImg from "../../assets/g4.png";
 
+// These references also make the animation and image dependencies explicit to
+// the project's lightweight ESLint setup, which does not inspect JSX members.
+void motion;
+void perfumeImg;
+
 const Hero = () => {
   return (
     <div

@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 
 export const StoreContext = createContext();
 
@@ -13,6 +13,10 @@ export const StoreProvider = ({ children }) => {
     const storeWishlist = localStorage.getItem('wishlist')
     return storeWishlist ? JSON.parse(storeWishlist) : []
   });
+  // A Buy Now purchase is intentionally kept separate from the saved cart.
+  // This lets Checkout reuse its normal order flow without adding a duplicate
+  // cart entry for the product being purchased immediately.
+  const [buyNowItem, setBuyNowItem] = useState(null);
 
   // search items 
   const [searchItem, setSearchItem] = useState('');
@@ -46,6 +50,14 @@ export const StoreProvider = ({ children }) => {
 
     });
   };
+
+  const startBuyNow = (product) => {
+    setBuyNowItem({ ...product, quantity: 1 });
+  };
+
+  const clearBuyNow = useCallback(() => {
+    setBuyNowItem(null);
+  }, []);
 
   const quantityIncrement = (productId) => {
     setCart(prevCart =>
@@ -118,15 +130,10 @@ export const StoreProvider = ({ children }) => {
     localStorage.removeItem("cart");
   };
 
-  // when click the proceed to payment button then remove the bags count 
-  const [cartCount, setCartCount] = useState(0);
+  // The bag badge is derived from cart items, so it always stays in sync.
+  const cartCount = totalItems;
   const [orderNumber, setOrderNumber] = useState("");
 
-  useEffect(() => {
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-    setCartCount(totalItems);
-  }, [cart]);
-  
 
   const clearDeliveryInfo = () => {
     setDeliveryInfo({
@@ -146,8 +153,11 @@ export const StoreProvider = ({ children }) => {
   return (
     <StoreContext.Provider value={{
       cart,
+      buyNowItem,
       wishlist,
       addToCart,
+      startBuyNow,
+      clearBuyNow,
       quantityIncrement,
       quantityDecrease,
       addToWishlist,
@@ -163,7 +173,6 @@ export const StoreProvider = ({ children }) => {
       clearDeliveryInfo,
       clearCart,
       cartCount,
-      setCartCount,
       orderNumber,
       setOrderNumber,
     }}>

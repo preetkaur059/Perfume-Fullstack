@@ -1,5 +1,10 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import Heading from "../Heading/Heading";
 import Cards from "../Cards/Cards";
@@ -11,11 +16,13 @@ const SellingProducts = () => {
   const categories = ["All", "Men", "Women", "Unisex"];
 
   const [activeTab, setActiveTab] = useState("All");
+  const [productSwiper, setProductSwiper] = useState(null);
+  const [activeSlide, setActiveSlide] = useState(0);
 
   const { data: productsResponse } = useProducts();
   const products = productsResponse?.data ?? [];
 
-  const { searchItem, addToCart } = useContext(StoreContext);
+  const { searchItem } = useContext(StoreContext);
 
   const navigate = useNavigate();
 
@@ -35,19 +42,9 @@ const SellingProducts = () => {
       .includes((searchItem || "").toLowerCase())
   );
 
-  // Show only first 20 products
-  const renderProducts = searchedItems.slice(0, 20).map((product, index) => (
-    <div
-      key={product._id}
-      data-aos="fade-up"
-      data-aos-delay={index * 200}
-    >
-      <Cards
-        product={product}
-        addToCart={addToCart}
-      />
-    </div>
-  ));
+  // Keep this section focused on eight products. The complete catalogue is
+  // still available from the "Explore Collection" button below.
+  const bestSellingProducts = searchedItems.slice(0, 8);
 
   return (
     <div className="bg-black pt-10">
@@ -87,13 +84,66 @@ const SellingProducts = () => {
         </div>
 
         {/* Products */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-10 mt-10 md:mt-20">
+        <div className="mt-10 md:mt-10">
           {searchedItems.length === 0 ? (
-            <p className="col-span-full text-white text-3xl flex justify-center items-center py-10">
+            <p className="text-white text-3xl flex justify-center items-center py-10">
               NO PRODUCT FOUND
             </p>
           ) : (
-            renderProducts
+            <>
+              <div className="mb-5 flex items-center justify-end gap-3 px-5 md:px-0">
+                <button
+                  type="button"
+                  onClick={() => productSwiper?.slidePrev()}
+                  disabled={!productSwiper || activeSlide === 0}
+                  aria-label="Show previous products"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => productSwiper?.slideNext()}
+                  disabled={!productSwiper || productSwiper.isEnd}
+                  aria-label="Show next products"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+
+              <Swiper
+                key={`${activeTab}-${searchItem}`}
+                modules={[Pagination]}
+                onSwiper={(swiper) => {
+                  setProductSwiper(swiper);
+                  setActiveSlide(swiper.activeIndex);
+                }}
+                onSlideChange={(swiper) => setActiveSlide(swiper.activeIndex)}
+                spaceBetween={16}
+                slidesPerView={1.1}
+                slidesPerGroup={1}
+                speed={550}
+                grabCursor
+                watchOverflow
+                pagination={{ clickable: true }}
+                breakpoints={{
+                  640: { slidesPerView: 2, spaceBetween: 20 },
+                  768: { slidesPerView: 3, spaceBetween: 24 },
+                  1024: { slidesPerView: 4, spaceBetween: 32 },
+                }}
+                className="best-selling-swiper !px-0 md:!px-1"
+              >
+                {bestSellingProducts.map((product) => (
+                  <SwiperSlide
+                    key={product._id ?? product.id}
+                    className="!h-auto"
+                  >
+                    <Cards product={product} showBuyNow />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </>
           )}
         </div>
 

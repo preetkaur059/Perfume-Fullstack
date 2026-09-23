@@ -1,11 +1,9 @@
-import React from 'react'
-import {  Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-const loading = () => {
+// Used by Suspense while a route-level page is being downloaded.
+const Loading = ({ message = "Loading your fragrance experience..." }) => {
   return (
-    <>
-
-  <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+  <div className="flex min-h-[300px] bg-black flex-col items-center justify-center gap-4 px-4">
     <div className="relative flex h-16 w-16 items-center justify-center">
       <div className="absolute inset-0 rounded-full border-4 border-white/10" />
 
@@ -19,11 +17,11 @@ const loading = () => {
 
     <div className="text-center">
       <p className="font-medium text-white">
-        Loading products
+        Please wait
       </p>
 
       <p className="mt-1 text-sm text-gray-500">
-        Please wait while we fetch your products...
+        {message}
       </p>
     </div>
 
@@ -33,8 +31,7 @@ const loading = () => {
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-lime-400 [animation-delay:300ms]" />
     </div>
   </div>
-    </>
   )
 }
 
-export default loading
+export default Loading

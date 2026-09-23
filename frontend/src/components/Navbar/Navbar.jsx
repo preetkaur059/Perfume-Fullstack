@@ -3,17 +3,20 @@ import { IoHeartSharp } from "react-icons/io5";
 import { FaBars, FaTimes, FaSearch, FaShoppingCart } from "react-icons/fa";
 import { RiShoppingBag4Fill } from "react-icons/ri";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { FaUserAlt } from "react-icons/fa";
-import { BiMenuAltRight } from "react-icons/bi";
-import { Link } from 'react-router-dom';
+import { FaUserAlt, FaSignInAlt, FaUserPlus, FaUser, FaBoxOpen, FaSignOutAlt } from "react-icons/fa";
+import { Link, useNavigate } from 'react-router-dom';
 import { useContext } from "react";
 import { StoreContext } from "../../context/StoreContext";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/auth/useAuth";
+import { useLogout } from "@/hooks/auth/useAuth";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
-    const { totalItems, wishlist, setSearchItem, cartCount } = useContext(StoreContext);
+    const { wishlist, setSearchItem, cartCount } = useContext(StoreContext);
     const { data: user } = useCurrentUser();
+    const logout = useLogout();
+    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const location = useLocation();
     const isCategoryActive =
@@ -32,12 +35,22 @@ const Navbar = () => {
     }
 
     const [showMenu, setShowMenu] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
 
-    const toggleMenu = () => {
-        setShowMenu(!showMenu);
-    }
     const handleLinkClick = () => {
         setShowMenu(false); // menu close
+        setShowUserMenu(false);
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout.mutateAsync();
+            toast.success("Logged out successfully!");
+            handleLinkClick();
+            navigate("/login");
+        } catch {
+            toast.error("Unable to log out. Please try again.");
+        }
     };
 
     useEffect(() => {
@@ -47,15 +60,6 @@ const Navbar = () => {
             document.body.style.overflow = "auto"; // enable scroll
         }
     }, [showMenu]);
-
-    const [isScrolled, setIsScrolled] = useState(false);
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10)
-        }
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [])
 
     return (
         <header className={` z-99 fixed top-5 left-0 right-0  `}>
@@ -150,29 +154,49 @@ const Navbar = () => {
                         }
                     </Link>
 
-                    {user ? (
-                    <Link
-                        to="/profile"
-                        className="flex w-10 h-10 rounded-full
-                        bg-gradient-to-b from-lime-200 to-lime-300
-                        text-black items-center justify-center
-                        font-bold cursor-pointer"
+                    <div
+                        className="relative"
+                        onMouseEnter={() => setShowUserMenu(true)}
+                        onMouseLeave={() => setShowUserMenu(false)}
                     >
-                        {user.fullName
-                        .split(" ")
-                        .map((name) => name[0])
-                        .join("")
-                        .toUpperCase()}
-                    </Link>
-                    ) : (
-                    <Link
-                        to="/login"
-                        className="flex text-white text-3xl
-                        hover:text-lime-200 transition duration-300 cursor-pointer"
-                    >
-                        <FaUserAlt />
-                    </Link>
-                    )}
+                        <button
+                            type="button"
+                            aria-label="Open account menu"
+                            aria-expanded={showUserMenu}
+                            onClick={() => setShowUserMenu((isOpen) => !isOpen)}
+                            className={`flex h-10 w-10 items-center justify-center transition duration-300 cursor-pointer ${
+                                user
+                                    ? "rounded-full bg-gradient-to-b from-lime-200 to-lime-300 text-black font-bold"
+                                    : "text-3xl text-white hover:text-lime-200"
+                            }`}
+                        >
+                            {user ? user.fullName?.split(" ").map((name) => name[0]).join("").toUpperCase() : <FaUserAlt />}
+                        </button>
+
+                        {showUserMenu && (
+                            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-lime-300/30 bg-[#111]/98 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl">
+                                {user ? (
+                                    <>
+                                        <div className="border-b border-white/10 px-3 py-2">
+                                            <p className="truncate font-semibold text-lime-200">{user.fullName}</p>
+                                            <p className="truncate text-xs text-gray-400">{user.email}</p>
+                                        </div>
+                                        <Link to="/profile" onClick={handleLinkClick} className="account-menu-link"><FaUser /> Profile</Link>
+                                        <Link to="/Orders" onClick={handleLinkClick} className="account-menu-link"><FaBoxOpen /> My Orders</Link>
+                                        <Link to="/wishlist" onClick={handleLinkClick} className="account-menu-link"><IoHeartSharp /> Wishlist</Link>
+                                        <Link to="/cart" onClick={handleLinkClick} className="account-menu-link"><FaShoppingCart /> Cart</Link>
+                                        <button type="button" onClick={handleLogout} disabled={logout.isPending} className="account-menu-link w-full text-left text-red-300 hover:!bg-red-500/10 hover:!text-red-200"><FaSignOutAlt /> {logout.isPending ? "Logging out..." : "Logout"}</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="px-3 py-2 text-sm text-gray-400">Welcome to ZIVARA</p>
+                                        <Link to="/login" onClick={handleLinkClick} className="account-menu-link"><FaSignInAlt /> Login</Link>
+                                        <Link to="/signup" onClick={handleLinkClick} className="account-menu-link"><FaUserPlus /> Sign Up</Link>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     <button onClick={() => setShowMenu(!showMenu)} className={`text-white text-2xl md:hidden`}>
                         {showMenu ? <FaTimes /> : <FaBars />}
                     </button>

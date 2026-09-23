@@ -1,23 +1,21 @@
 import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaHeart, FaPlus, FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 import { StoreContext } from "../../context/StoreContext";
 
 const Cards = ({ product }) => {
-  const {
-    wishlist,
-    addToWishlist,
-    addToCart,
-  } = useContext(StoreContext);
+  const { wishlist, addToWishlist, addToCart, startBuyNow } =
+    useContext(StoreContext);
+  const navigate = useNavigate();
 
   // Support MongoDB _id and normal id
   const productId = product?._id ?? product?.id;
 
   // Check whether product is already in wishlist
   const isInWishlist = wishlist.some(
-    (item) => (item._id ?? item.id) === productId
+    (item) => (item._id ?? item.id) === productId,
   );
 
   const handleWishlist = () => {
@@ -33,6 +31,11 @@ const Cards = ({ product }) => {
   const handleAddToCart = () => {
     addToCart(product);
     toast.success("Item added to cart 🛒");
+  };
+
+  const handleBuyNow = () => {
+    startBuyNow(product);
+    navigate("/checkout");
   };
 
   return (
@@ -52,15 +55,10 @@ const Cards = ({ product }) => {
         <button
           type="button"
           onClick={handleWishlist}
-          aria-label={
-            isInWishlist
-              ? "Remove from wishlist"
-              : "Add to wishlist"
-          }
+          aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
           className={`text-xl hover:scale-110 cursor-pointer
-          hover:text-lime-400 transition ${
-            isInWishlist ? "text-lime-300" : "text-white"
-          }`}
+          hover:text-lime-400 transition ${isInWishlist ? "text-lime-300" : "text-white"
+            }`}
         >
           <FaHeart />
         </button>
@@ -80,7 +78,7 @@ const Cards = ({ product }) => {
 
       {/* Product Image */}
       <Link to={`/product/${productId}`}>
-        <div className="relative w-full h-52 md:h-62 overflow-hidden">
+        <div className="relative w-full h-72 md:h-72 overflow-hidden">
           <img
             src={product?.image}
             alt={product?.productName || "Product"}
@@ -91,19 +89,21 @@ const Cards = ({ product }) => {
       </Link>
 
       {/* Product Information */}
-      <div className="text-center pt-5 pb-4">
-        <h3 className="text-white md:text-lg mb-2 tracking-wide">
+      <div className="text-center pt-5 pb-5">
+        {/* Product Name */}
+        <h3 className="text-white text-base md:text-lg font-medium mb-3 tracking-wide line-clamp-1">
           {product?.productName}
         </h3>
 
-        <div className="flex justify-around items-center">
+        {/* Price + Rating */}
+        <div className="flex items-center justify-center gap-6 mb-5">
           {/* Price */}
-          <p className="text-[#e2f2b0] text-xl md:text-2xl font-bold mb-4">
+          <p className="text-[#e2f2b0] text-xl md:text-2xl font-bold">
             ${Number(product?.price || 0).toFixed(2)}
           </p>
 
           {/* Rating */}
-          <div className="flex text-yellow-400 mt-1 text-lg md:text-xl gap-1">
+          <div className="flex items-center text-yellow-400 text-sm md:text-base gap-1">
             {Array.from({
               length: Number(product?.rating || 0),
             }).map((_, index) => (
@@ -111,6 +111,26 @@ const Cards = ({ product }) => {
             ))}
           </div>
         </div>
+
+        {/* Buy Now */}
+
+        <div className="px-4">
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="group w-full cursor-pointer rounded-sm bg-gradient-to-r from-lime-200 via-lime-300 to-lime-400 
+              px-5 py-3 text-sm md:text-base font-bold text-black shadow-[0_0_20px_rgba(190,242,100,0.15)] transition-all 
+              duration-300 hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(190,242,100,0.35)] active:scale-[0.98]"
+          >
+            <span className="flex items-center justify-center gap-2">
+              Buy Now
+              <span className="text-base transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </span>
+          </button>
+        </div>
+
       </div>
     </div>
   );

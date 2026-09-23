@@ -1018,8 +1018,8 @@ const Products = () => {
                       {uploadingImage
                         ? "Uploading..."
                         : editingProduct
-                        ? "Updating..."
-                        : "Creating..."}
+                          ? "Updating..."
+                          : "Creating..."}
                     </span>
                   </>
                 ) : (

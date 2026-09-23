@@ -4,6 +4,9 @@ import storyimg from "../../assets/perfume1.png";
 import Heading from "../Heading/Heading";
 import Button from "../Button/Button";
 
+// The current ESLint setup does not count JSX member expressions as usage.
+void motion;
+
 const OurStory = () => {
   return (
     <section className="bg-[#101010] ">

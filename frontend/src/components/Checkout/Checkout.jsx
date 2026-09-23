@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -12,17 +12,30 @@ const Checkout = () => {
 
   const {
     cart,
-    subTotal,
-    orderTotal,
     clearCart,
+    buyNowItem,
+    clearBuyNow,
     deliveryInfo,
     setDeliveryInfo,
   } = useContext(StoreContext);
+
+  // A Buy Now visit checks out exactly one item. All other visits retain the
+  // existing cart-based checkout behaviour.
+  const checkoutItems = buyNowItem ? [buyNowItem] : cart;
+  const subTotal = checkoutItems.reduce(
+    (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
+    0,
+  );
+  const orderTotal = subTotal;
 
   const [errors, setErrors] = useState({});
 
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { data: user } = useCurrentUser();
+
+  useEffect(() => () => {
+    clearBuyNow();
+  }, [clearBuyNow]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -63,7 +76,7 @@ const Checkout = () => {
   const handleProceed = (e) => {
     e.preventDefault();
 
-    if (cart.length === 0) {
+    if (checkoutItems.length === 0) {
       toast.error("Your cart is empty.");
       return;
     }
@@ -90,7 +103,7 @@ const Checkout = () => {
       }
     */
 
-    const orderItems = cart.map((item) => ({
+    const orderItems = checkoutItems.map((item) => ({
       // Cart entries are product objects. Only send their MongoDB ID, not the object.
       product: item._id ?? item.id,
       quantity: Number(item.quantity),
@@ -122,8 +135,13 @@ const Checkout = () => {
 
         const createdOrder = response?.data;
 
-        // Clear cart only after successful API request
-        clearCart();
+        // Only cart checkout clears the cart. A Buy Now order leaves the
+        // shopper's existing cart unchanged.
+        if (buyNowItem) {
+          clearBuyNow();
+        } else {
+          clearCart();
+        }
 
         // Pass backend order to success page
         navigate("/OrderSuccess2", {
@@ -381,6 +399,25 @@ const Checkout = () => {
             Order Summary
           </h2>
 
+          <div className="mb-6 space-y-3 border-b border-[#222] pb-4">
+            {checkoutItems.map((item) => (
+              <div
+                key={item._id ?? item.id}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-white">
+                    {item.productName}
+                  </p>
+                  <p className="text-gray-400">Quantity: {item.quantity}</p>
+                </div>
+                <p className="shrink-0 font-semibold text-lime-300">
+                  ${Number(item.price || 0).toFixed(2)}
+                </p>
+              </div>
+            ))}
+          </div>
+
           <div className="flex justify-between mb-4">
             <span>Subtotal</span>
 
@@ -405,7 +442,7 @@ const Checkout = () => {
           <button
             type="button"
             onClick={handleProceed}
-            disabled={cart.length === 0 || isPending}
+            disabled={checkoutItems.length === 0 || isPending}
             className="w-full cursor-pointer mt-8 py-3 rounded-lg
             bg-gradient-to-r from-lime-200 to-lime-300
             text-black font-bold

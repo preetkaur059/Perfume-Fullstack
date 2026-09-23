@@ -7,11 +7,6 @@ const Contact = () => {
   const [email, setEmail] = useState("")
   const [msg, setMsg] = useState("")
 
-  const [count, setCount] =useState(1)  
-
-//    const increment = ()=>{
-// setCount((previous)=>previous+1)
-//    }
   // const user1 = {
   //   name: "Param",
   //   class: "BCA",
@@ -23,18 +18,6 @@ const Contact = () => {
   
 
 
-  const handleSubmit = ()=>{
-    const payload = {
-      fullname:username, 
-      email,
-      query: msg
-    }
-    
-    console.log('payload: ', payload);
-
-  }
-  
-  console.log('username: ', username);
   return (
     <div className="bg-black text-white pt-25 pb-20">
       <div className="max-w-[1200px] mx-auto px-6">
@@ -88,11 +71,12 @@ const Contact = () => {
             Send Us A Message
           </h2>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
 
             <input
               type="text"
               placeholder="Your Name"
+              value={username}
               onChange={(e)=>setUsername(e.target.value)}
               className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
             />
@@ -100,6 +84,7 @@ const Contact = () => {
             <input
               type="email"
               placeholder="Your Email"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
             />
@@ -107,6 +92,7 @@ const Contact = () => {
             <textarea
               rows="5"
               placeholder="Your Message"
+              value={msg}
               onChange={(e) => setMsg(e.target.value)}
               className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
             ></textarea>

@@ -61,6 +61,24 @@ body {
   animation: scroll 15s linear infinite;
 }
 
+@layer components {
+  .account-menu-link {
+    @apply mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white transition hover:bg-lime-300/10 hover:text-lime-200;
+  }
+
+  .best-selling-swiper {
+    @apply pb-12;
+  }
+
+  .best-selling-swiper .swiper-pagination-bullet {
+    @apply bg-lime-200 opacity-40;
+  }
+
+  .best-selling-swiper .swiper-pagination-bullet-active {
+    @apply w-5 rounded-full bg-lime-300 opacity-100;
+  }
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;

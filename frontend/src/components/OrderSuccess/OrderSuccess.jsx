@@ -9,7 +9,7 @@ const OrderSuccess = () => {
 
   const { deliveryInfo, orderNumber, orderTotal } = useContext(StoreContext);
   
-  const orderId = "PRF" + Math.floor(100000 + Math.random() * 900000);
+  const orderId = orderNumber || "Your order is being confirmed";
 
   return (
     <div className="min-h-screen pt-30 bg-[#0d0d0d] flex items-center justify-center px-6">

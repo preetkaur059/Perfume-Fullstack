@@ -13,6 +13,9 @@ const Profile = () => {
   const {
     data: orders,
     isLoading: ordersLoading,
+    isError: ordersError,
+    error: ordersRequestError,
+    refetch: refetchOrders,
   } = useOrders();
 
   if (isError) {
@@ -96,6 +99,19 @@ const Profile = () => {
               <div className="text-center py-8 text-gray-400">
                 Loading orders...
               </div>
+            ) : ordersError ? (
+              <div className="text-center py-8 border border-red-400/20 rounded-xl">
+                <p className="text-red-300">
+                  {ordersRequestError?.response?.data?.message || "Unable to load your orders."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetchOrders()}
+                  className="mt-4 px-5 py-2 rounded-lg border border-lime-300 text-lime-200 hover:bg-lime-300 hover:text-black transition duration-300 cursor-pointer"
+                >
+                  Try Again
+                </button>
+              </div>
             ) : !orders || orders.length === 0 ? (
               <div className="text-center py-8 border border-white/10 rounded-xl">
                 <p className="text-gray-400">
@@ -116,13 +132,13 @@ const Profile = () => {
             ) : (
               <div className="space-y-5">
 
-                {orders?.data?.map((order) => (
+                {orders.map((order) => (
                   <div
                     key={order._id}
                     className="bg-black border border-white/10 rounded-xl p-5"
                   >
 
-                    {/* Order Header */}
+                    Order Header
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
 
                       <div>

@@ -1,36 +1,39 @@
-import React from 'react'
-import Home from './components/Home/Home'
+import { lazy, Suspense, useEffect } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Layout from './components/Layout/Layout'
 import { StoreProvider } from './context/StoreContext'
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useEffect } from "react";
-import Cart from './components/Cart/Cart'
-import Wishlist from './components/Wishlist/Wishlist'
-import Checkout from './components/Checkout/Checkout'
-import Payment from './components/Payment/Payment'
-import OrderSuccess2 from './components/OrderSuccess/OrderSuccess2'
-import Orders from './components/Orders/Orders'
-import Allproducts from './components/Allproducts/Allproducts'
-import Men from './components/Categories/Men'
-import Women from './components/Categories/Women'
-import Unisex from './components/Categories/Unisex'
-import Contact from './components/Contact/Contact'
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ProductDetails from './components/ProductDetails/ProductDetails'
-import Login from './components/auth/Login'
-import Signup from './components/auth/SignUp'
-import ForgotPassword from './components/auth/ForgotPassword'
-import Profile from './components/profile/profile'
-import AdminProtectedRoute from './components/admin/AdminProtectedRoute/AdminProtectedRoute'
-import AdminDashboard from './components/admin/AdminProtectedRoute/AdminDashboard/AdminDashboard'
-import Dashboard from './components/admin/AdminProtectedRoute/AdminDashboard/Dashboard'
-import Products from './components/admin/AdminProtectedRoute/AdminDashboard/Products'
-import Settings from './components/admin/AdminProtectedRoute/AdminDashboard/Settings'
-import AdminOrders from './components/admin/AdminProtectedRoute/AdminDashboard/AdminOrders'
-import Users from './components/admin/AdminProtectedRoute/AdminDashboard/Users'
+import Loading from './components/Loading'
+
+// Pages are loaded only when their route is visited, keeping the initial shop
+// bundle smaller without changing any existing route URLs.
+const Layout = lazy(() => import('./components/Layout/Layout'));
+const Home = lazy(() => import('./components/Home/Home'));
+const Cart = lazy(() => import('./components/Cart/Cart'));
+const Wishlist = lazy(() => import('./components/Wishlist/Wishlist'));
+const Checkout = lazy(() => import('./components/Checkout/Checkout'));
+const Payment = lazy(() => import('./components/Payment/Payment'));
+const OrderSuccess2 = lazy(() => import('./components/OrderSuccess/OrderSuccess2'));
+const Orders = lazy(() => import('./components/Orders/Orders'));
+const Allproducts = lazy(() => import('./components/Allproducts/Allproducts'));
+const Men = lazy(() => import('./components/Categories/Men'));
+const Women = lazy(() => import('./components/Categories/Women'));
+const Unisex = lazy(() => import('./components/Categories/Unisex'));
+const Contact = lazy(() => import('./components/Contact/Contact'));
+const ProductDetails = lazy(() => import('./components/ProductDetails/ProductDetails'));
+const Login = lazy(() => import('./components/auth/Login'));
+const Signup = lazy(() => import('./components/auth/SignUp'));
+const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
+const Profile = lazy(() => import('./components/profile/profile'));
+const AdminProtectedRoute = lazy(() => import('./components/admin/AdminProtectedRoute/AdminProtectedRoute'));
+const AdminDashboard = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/AdminDashboard'));
+const Dashboard = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Dashboard'));
+const Products = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Products'));
+const Settings = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Settings'));
+const AdminOrders = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/AdminOrders'));
+const Users = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Users'));
 
 
 const App = () => {
@@ -149,7 +152,9 @@ const App = () => {
   ])
   return (
     <StoreProvider>
-      <RouterProvider router={router} />
+      <Suspense fallback={<Loading />}>
+        <RouterProvider router={router} />
+      </Suspense>
 
       <ToastContainer
         position="top-right"

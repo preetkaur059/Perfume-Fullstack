@@ -14,7 +14,12 @@ const getOrders = async (url, params = {}) => {
 export const useOrders = (params = {}) => {
   return useQuery({
     queryKey: ["orders", params],
-    queryFn: () => getOrders("/orders", params),
+    // The customer endpoint returns { success, data, pagination }. Customer
+    // screens only need the order list, so expose that list consistently.
+    queryFn: async () => {
+      const response = await getOrders("/orders", params);
+      return response?.data ?? [];
+    },
 
     retry: false,
 
