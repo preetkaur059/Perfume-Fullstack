@@ -7,6 +7,8 @@ const getProducts = async ({
   search = "",
   category = "",
   sort = "newest",
+  minPrice = "",
+  maxPrice = "",
 } = {}) => {
   const { data } = await api.get("/products", {
     params: {
@@ -15,6 +17,8 @@ const getProducts = async ({
       ...(search && { search }),
       ...(category && category !== "All" && { category }),
       ...(sort && { sort }),
+      ...(minPrice !== "" && minPrice !== undefined && { minPrice }),
+      ...(maxPrice !== "" && maxPrice !== undefined && { maxPrice }),
     },
   });
   return data;
