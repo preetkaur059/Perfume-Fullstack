@@ -114,6 +114,18 @@ const getAllProducts = async (req, res) => {
       filter.category = { $regex: `^${req.query.category.trim()}$`, $options: "i" };
     }
 
+    const minPrice = Number(req.query.minPrice);
+    const maxPrice = Number(req.query.maxPrice);
+    const hasMinPrice = req.query.minPrice !== undefined && Number.isFinite(minPrice) && minPrice >= 0;
+    const hasMaxPrice = req.query.maxPrice !== undefined && Number.isFinite(maxPrice) && maxPrice >= 0;
+
+    if (hasMinPrice || hasMaxPrice) {
+      filter.price = {
+        ...(hasMinPrice && { $gte: minPrice }),
+        ...(hasMaxPrice && { $lte: maxPrice }),
+      };
+    }
+
     let sortQuery = { _id: -1 };
     if (req.query.sort) {
       switch (req.query.sort) {
@@ -131,6 +143,10 @@ const getAllProducts = async (req, res) => {
         case "highest_rating":
         case "rating_desc":
           sortQuery = { rating: -1 };
+          break;
+        case "lowest_rating":
+        case "rating_asc":
+          sortQuery = { rating: 1 };
           break;
         case "name_asc":
           sortQuery = { productName: 1 };
