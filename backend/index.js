@@ -1,5 +1,5 @@
 //some code from Aryan
-//Aryan
+// parampreet kaur 
 import mongoose from "mongoose";
 import app from "./app.js"
 // MongoDB Connection
@@ -17,3 +17,4 @@ mongoose
   });
 
 //12
+// 34
