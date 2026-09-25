@@ -1,4 +1,4 @@
- import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 
 import Heading from "../Heading/Heading";
 import Cards from "../Cards/Cards";
@@ -128,7 +128,7 @@ const Category = ({ type }) => {
           </button>
         </div>
 
-      <Pagination className="cursor-pointer" pagination={pagination} onPageChange={setPage} />
+        <Pagination className="cursor-pointer" pagination={pagination} onPageChange={setPage} />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-10 mt-8">
           {products.length === 0 ?
             <p className='col-span-full text-white text-3xl flex justify-center items-center'>NO PRODUCT FOUND</p>
