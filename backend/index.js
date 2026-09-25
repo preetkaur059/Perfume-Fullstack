@@ -1,3 +1,5 @@
+//some code from Aryan
+
 import mongoose from "mongoose";
 import app from "./app.js"
 // MongoDB Connection
