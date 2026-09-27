@@ -4,10 +4,12 @@ import { FaHeart, FaPlus, FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 import { StoreContext } from "../../context/StoreContext";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const Cards = ({ product }) => {
   const { wishlist, addToWishlist, addToCart, startBuyNow } =
     useContext(StoreContext);
+  const { data: user } = useCurrentUser();
   const navigate = useNavigate();
 
   // Support MongoDB _id and normal id
@@ -19,6 +21,11 @@ const Cards = ({ product }) => {
   );
 
   const handleWishlist = () => {
+    if (!user) {
+      toast.error("Please login first to add this product to your cart/wishlist.");
+      return;
+    }
+
     addToWishlist(product);
 
     if (isInWishlist) {
@@ -29,11 +36,22 @@ const Cards = ({ product }) => {
   };
 
   const handleAddToCart = () => {
+    if (!user) {
+      toast.error("Please login first to add this product to your cart/wishlist.");
+      return;
+    }
+
     addToCart(product);
     toast.success("Item added to cart 🛒");
   };
 
   const handleBuyNow = () => {
+    if (!user) {
+      toast.error("Please login first to add this product to your cart/wishlist.");
+      navigate("/login");
+      return;
+    }
+
     startBuyNow(product);
     navigate("/checkout");
   };

@@ -6,8 +6,16 @@ import { NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const Wishlist = () => {
+  const { wishlist, addToCart, removeFromWishlist, isWishlistLoading } =
+    useContext(StoreContext);
 
-  const { wishlist, addToCart, removeFromWishlist } = useContext(StoreContext);
+  if (isWishlistLoading) {
+    return (
+      <div className="min-h-screen pt-30 bg-[#0d0d0d] text-white flex items-center justify-center">
+        Loading wishlist...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-30 bg-[#0d0d0d] text-white px-6 md:px-16 py-10">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useCurrentUser, useLogout } from "@/hooks/auth/useAuth";
@@ -18,9 +18,11 @@ const Profile = () => {
     refetch: refetchOrders,
   } = useOrders();
 
-  if (isError) {
-    navigate("/login", { replace: true });
-  }
+  useEffect(() => {
+    if (isError) {
+      navigate("/login", { replace: true });
+    }
+  }, [isError, navigate]);
 
   const handleLogout = async () => {
     try {

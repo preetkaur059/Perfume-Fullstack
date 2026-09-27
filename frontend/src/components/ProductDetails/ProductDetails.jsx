@@ -5,12 +5,12 @@ import { StoreContext } from "../../context/StoreContext";
 import { FaHeart, FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useProduct } from "@/hooks/products/useProducts";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const ProductDetails = () => {
-
     const { id } = useParams();
-
     const { wishlist, addToWishlist, addToCart } = useContext(StoreContext);
+    const { data: user } = useCurrentUser();
 
   const { data: product, isLoading } = useProduct(id);
 
@@ -80,6 +80,10 @@ const ProductDetails = () => {
                         {/* Add To Cart */}
                         <button
                             onClick={() => {
+                                if (!user) {
+                                    toast.error("Please login first to add this product to your cart/wishlist.");
+                                    return;
+                                }
                                 addToCart(product);
                                 toast.success("Item added to cart 🛒");
                             }}
@@ -91,6 +95,10 @@ const ProductDetails = () => {
                         {/* Wishlist */}
                         <button
                             onClick={() => {
+                                if (!user) {
+                                    toast.error("Please login first to add this product to your cart/wishlist.");
+                                    return;
+                                }
 
                                 addToWishlist(product);
 

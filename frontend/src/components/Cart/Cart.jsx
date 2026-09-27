@@ -14,6 +14,7 @@ const Cart = () => {
     quantityDecrease,
     subTotal,
     orderTotal,
+    isCartLoading,
   } = useContext(StoreContext);
 
   const navigate = useNavigate();
@@ -26,6 +27,14 @@ const Cart = () => {
 
     navigate("/checkout");
   };
+
+  if (isCartLoading) {
+    return (
+      <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white flex items-center justify-center">
+        Loading cart...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-6 md:px-20 py-12">

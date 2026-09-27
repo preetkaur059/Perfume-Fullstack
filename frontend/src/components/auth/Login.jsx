@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate  } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useLogin } from "@/hooks/auth/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
 
   // Form Data
@@ -76,7 +77,11 @@ const Login = () => {
     if (data.success) {
       toast.success("Login successful!");
 
-      navigate("/admin", { replace: true });
+      const destination =
+        location.state?.from?.pathname ||
+        (data.user?.isAdmin ? "/admin" : "/");
+
+      navigate(destination, { replace: true });
     } else {
       toast.error(data.msg || "Invalid email or password");
     }

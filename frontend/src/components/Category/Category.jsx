@@ -71,7 +71,7 @@ const Category = ({ type }) => {
       <div className="max-w-[1300px] mx-auto">
 
         <div className="text-center">
-          {/* <Heading highlight={headingText} /> */}
+          <Heading highlight={headingText} />
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

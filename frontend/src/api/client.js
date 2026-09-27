@@ -9,10 +9,35 @@ const api = axios.create({
 // This shared promise makes simultaneous 401 responses wait for one refresh request.
 let refreshPromise = null;
 
-const clearAuthenticationAndRedirect = () => {
+const protectedRoutes = [
+  "/cart",
+  "/wishlist",
+  "/checkout",
+  "/payment",
+  "/OrderSuccess2",
+  "/Orders",
+  "/orders",
+  "/profile",
+  "/admin",
+];
+
+const isProtectedRoute = (pathname) => {
+  return protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+};
+
+const clearAuthenticationAndRedirect = (originalUrl = "") => {
   window.dispatchEvent(new Event("auth:changed"));
 
-  if (window.location.pathname !== "/login") {
+  if (originalUrl && originalUrl.includes("/users/me")) {
+    return;
+  }
+
+  if (
+    isProtectedRoute(window.location.pathname) &&
+    window.location.pathname !== "/login"
+  ) {
     window.location.assign("/login");
   }
 };
@@ -41,7 +66,7 @@ api.interceptors.response.use(
       await refreshPromise;
       return api(originalRequest);
     } catch (refreshError) {
-      clearAuthenticationAndRedirect();
+      clearAuthenticationAndRedirect(originalRequest.url);
       return Promise.reject(refreshError);
     }
   }

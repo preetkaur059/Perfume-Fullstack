@@ -34,6 +34,7 @@ const Products = lazy(() => import('./components/admin/AdminProtectedRoute/Admin
 const Settings = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Settings'));
 const AdminOrders = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/AdminOrders'));
 const Users = lazy(() => import('./components/admin/AdminProtectedRoute/AdminDashboard/Users'));
+const ProtectedRoute = lazy(() => import('./components/auth/ProtectedRoute'));
 
 
 const App = () => {
@@ -54,11 +55,19 @@ const App = () => {
           },
           {
             path: '/cart',
-            element: <Cart />,
+            element: (
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/wishlist',
-            element: <Wishlist />,
+            element: (
+              <ProtectedRoute>
+                <Wishlist />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/login',
@@ -70,7 +79,11 @@ const App = () => {
           },
           {
             path: '/profile',
-            element: <Profile />,
+            element: (
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/forgot-password',
@@ -78,19 +91,35 @@ const App = () => {
           },
           {
             path: '/checkout',
-            element: <Checkout />,
+            element: (
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/payment',
-            element: <Payment />,
+            element: (
+              <ProtectedRoute>
+                <Payment />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/OrderSuccess2',
-            element: <OrderSuccess2 />,
+            element: (
+              <ProtectedRoute>
+                <OrderSuccess2 />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/Orders',
-            element: <Orders />,
+            element: (
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            ),
           },
           {
             path: '/Allproducts',

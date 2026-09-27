@@ -1,54 +1,72 @@
-import { createContext, useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useState } from "react";
+import { toast } from "react-toastify";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
+import {
+  useCart,
+  useAddToCart,
+  useUpdateCartQuantity,
+  useRemoveFromCart,
+  useClearCart,
+} from "@/hooks/cart/useCart";
+import {
+  useWishlist,
+  useAddToWishlist,
+  useRemoveFromWishlist,
+} from "@/hooks/wishlist/useWishlist";
 
 export const StoreContext = createContext();
 
 export const StoreProvider = ({ children }) => {
-  const getProductId = (product) => product._id ?? product.id;
+  const getProductId = (product) => product?._id ?? product?.id;
 
-  const [cart, setCart] = useState(() => {
-    const storeCart = localStorage.getItem('cart')
-    return storeCart ? JSON.parse(storeCart) : []
-  });
-  const [wishlist, setWishlist] = useState(() => {
-    const storeWishlist = localStorage.getItem('wishlist')
-    return storeWishlist ? JSON.parse(storeWishlist) : []
-  });
-  // A Buy Now purchase is intentionally kept separate from the saved cart.
-  // This lets Checkout reuse its normal order flow without adding a duplicate
-  // cart entry for the product being purchased immediately.
+  const { data: user } = useCurrentUser();
+
+  const { data: cartData = [], isLoading: isCartLoading } = useCart();
+  const { data: wishlistData = [], isLoading: isWishlistLoading } = useWishlist();
+
+  const addToCartMutation = useAddToCart();
+  const updateCartQuantityMutation = useUpdateCartQuantity();
+  const removeFromCartMutation = useRemoveFromCart();
+  const clearCartMutation = useClearCart();
+
+  const addToWishlistMutation = useAddToWishlist();
+  const removeFromWishlistMutation = useRemoveFromWishlist();
+
+  // Cart and wishlist data are fetched and managed by backend + TanStack Query
+  const cart = user ? cartData : [];
+  const wishlist = user ? wishlistData : [];
+
+  // Temporary UI state for immediate Buy Now purchases
   const [buyNowItem, setBuyNowItem] = useState(null);
 
-  // search items 
-  const [searchItem, setSearchItem] = useState('');
+  // Search input UI state
+  const [searchItem, setSearchItem] = useState("");
 
-  // save items to localStorage
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    localStorage.setItem('wishlist', JSON.stringify(wishlist));
-  }, [cart, wishlist])
+  const [deliveryInfo, setDeliveryInfo] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    street: "",
+    city: "",
+    state: "",
+    pinCode: "",
+    postalCode: "",
+    country: "",
+    phone: "",
+  });
 
+  const [orderNumber, setOrderNumber] = useState("");
 
-  // add to cart 
-  const addToCart = (product) => {
+  const addToCart = (product, quantity = 1) => {
+    if (!user) {
+      toast.error("Please login first to add this product to your cart/wishlist.");
+      return;
+    }
 
-    setCart(prevCart => {
+    const productId = getProductId(product);
+    if (!productId) return;
 
-      const productId = getProductId(product);
-      const existingItem = prevCart.find(item => getProductId(item) === productId);
-
-      //  If already exists → increase quantity
-      if (existingItem) {
-        return prevCart.map(item =>
-          getProductId(item) === productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-
-      //  If not exists → add with quantity 1
-      return [...prevCart, { ...product, quantity: 1 }];
-
-    });
+    addToCartMutation.mutate({ productId, quantity });
   };
 
   const startBuyNow = (product) => {
@@ -60,80 +78,60 @@ export const StoreProvider = ({ children }) => {
   }, []);
 
   const quantityIncrement = (productId) => {
-    setCart(prevCart =>
-      prevCart.map(item =>
-        getProductId(item) === productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
+    if (!user || !productId) return;
+    updateCartQuantityMutation.mutate({ productId, action: "increase" });
   };
 
   const quantityDecrease = (productId) => {
-    setCart(prevCart =>
-      prevCart
-        .map(item =>
-          getProductId(item) === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-        .filter(item => item.quantity > 0)
-    );
+    if (!user || !productId) return;
+    updateCartQuantityMutation.mutate({ productId, action: "decrease" });
   };
 
-  const subTotal = cart.reduce((acc, item) => {
-    return acc + item.price * item.quantity;
-  }, 0);
-
-  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  // const shippingFee = totalItems * 2;
-  const orderTotal = subTotal ;
-
-  // add to wishlist 
-  const addToWishlist = (product) => {
-    setWishlist(prev => {
-      const productId = getProductId(product);
-      const alreadyAdded = prev.find(item => getProductId(item) === productId);
-
-      if (alreadyAdded) {
-        // remove if already exists (toggle)
-        return prev.filter(item => getProductId(item) !== productId);
-      } else {
-        // add if not exists
-        return [...prev, product];
-      }
-    });
-  };
   const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => getProductId(item) !== productId));
+    if (!user || !productId) return;
+    removeFromCartMutation.mutate(productId);
+  };
+
+  const clearCart = () => {
+    if (!user) return;
+    clearCartMutation.mutate();
+  };
+
+  const addToWishlist = (product) => {
+    if (!user) {
+      toast.error("Please login first to add this product to your cart/wishlist.");
+      return;
+    }
+
+    const productId = getProductId(product);
+    if (!productId) return;
+
+    const alreadyAdded = wishlist.some(
+      (item) => getProductId(item) === productId
+    );
+
+    if (alreadyAdded) {
+      removeFromWishlistMutation.mutate(productId);
+    } else {
+      addToWishlistMutation.mutate(productId);
+    }
   };
 
   const removeFromWishlist = (productId) => {
-    setWishlist(prev => prev.filter(item => getProductId(item) !== productId));
+    if (!user || !productId) return;
+    removeFromWishlistMutation.mutate(productId);
   };
 
-  const [deliveryInfo, setDeliveryInfo] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    street: "",
-    city: "",
-    state: "",
-    pinCode: "",
-    country: "",
-    phone: ""
-  });
+  const subTotal = cart.reduce((acc, item) => {
+    return acc + Number(item.price || 0) * Number(item.quantity || 0);
+  }, 0);
 
-  // clear cart 
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem("cart");
-  };
-
-  // The bag badge is derived from cart items, so it always stays in sync.
+  const totalItems = cart.reduce(
+    (acc, item) => acc + Number(item.quantity || 0),
+    0
+  );
   const cartCount = totalItems;
-  const [orderNumber, setOrderNumber] = useState("");
-
+  const orderTotal = subTotal;
 
   const clearDeliveryInfo = () => {
     setDeliveryInfo({
@@ -144,38 +142,42 @@ export const StoreProvider = ({ children }) => {
       city: "",
       state: "",
       pinCode: "",
+      postalCode: "",
       country: "",
-      phone: ""
+      phone: "",
     });
   };
 
-
   return (
-    <StoreContext.Provider value={{
-      cart,
-      buyNowItem,
-      wishlist,
-      addToCart,
-      startBuyNow,
-      clearBuyNow,
-      quantityIncrement,
-      quantityDecrease,
-      addToWishlist,
-      removeFromCart,
-      subTotal,
-      totalItems,
-      orderTotal,
-      removeFromWishlist,
-      searchItem,
-      setSearchItem,
-      deliveryInfo,
-      setDeliveryInfo,
-      clearDeliveryInfo,
-      clearCart,
-      cartCount,
-      orderNumber,
-      setOrderNumber,
-    }}>
+    <StoreContext.Provider
+      value={{
+        cart,
+        isCartLoading,
+        buyNowItem,
+        wishlist,
+        isWishlistLoading,
+        addToCart,
+        startBuyNow,
+        clearBuyNow,
+        quantityIncrement,
+        quantityDecrease,
+        addToWishlist,
+        removeFromCart,
+        subTotal,
+        totalItems,
+        orderTotal,
+        removeFromWishlist,
+        searchItem,
+        setSearchItem,
+        deliveryInfo,
+        setDeliveryInfo,
+        clearDeliveryInfo,
+        clearCart,
+        cartCount,
+        orderNumber,
+        setOrderNumber,
+      }}
+    >
       {children}
     </StoreContext.Provider>
   );

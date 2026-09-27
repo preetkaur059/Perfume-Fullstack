@@ -6,6 +6,8 @@ import orderRouter from "./routes/orderRouter.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import adminOrderRoutes from "./routes/adminOrderRoutes.js";
+import cartRouter from "./routes/cartRouter.js";
+import wishlistRouter from "./routes/wishlistRouter.js";
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ app.use(cookieParser());
 app.use("/users", userRouter);
 app.use("/products", productsRouter);
 app.use("/orders", orderRouter);
+app.use("/cart", cartRouter);
+app.use("/wishlist", wishlistRouter);
 
 app.use("/admin/orders", adminOrderRoutes);
 
