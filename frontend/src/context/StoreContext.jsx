@@ -22,7 +22,8 @@ export const StoreProvider = ({ children }) => {
   const { data: user } = useCurrentUser();
 
   const { data: cartData = [], isLoading: isCartLoading } = useCart();
-  const { data: wishlistData = [], isLoading: isWishlistLoading } = useWishlist();
+  const { data: wishlistData = [], isLoading: isWishlistLoading } =
+    useWishlist();
 
   const addToCartMutation = useAddToCart();
   const updateCartQuantityMutation = useUpdateCartQuantity();
@@ -59,7 +60,12 @@ export const StoreProvider = ({ children }) => {
 
   const addToCart = (product, quantity = 1) => {
     if (!user) {
-      toast.error("Please login first to add this product to your cart/wishlist.");
+      toast.error(
+        "Please login first to add this product to your cart/wishlist.",
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
       return;
     }
 
@@ -99,7 +105,12 @@ export const StoreProvider = ({ children }) => {
 
   const addToWishlist = (product) => {
     if (!user) {
-      toast.error("Please login first to add this product to your cart/wishlist.");
+      toast.error(
+        "Please login first to add this product to your cart/wishlist.",
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
       return;
     }
 
@@ -107,7 +118,7 @@ export const StoreProvider = ({ children }) => {
     if (!productId) return;
 
     const alreadyAdded = wishlist.some(
-      (item) => getProductId(item) === productId
+      (item) => getProductId(item) === productId,
     );
 
     if (alreadyAdded) {
@@ -128,7 +139,7 @@ export const StoreProvider = ({ children }) => {
 
   const totalItems = cart.reduce(
     (acc, item) => acc + Number(item.quantity || 0),
-    0
+    0,
   );
   const cartCount = totalItems;
   const orderTotal = subTotal;

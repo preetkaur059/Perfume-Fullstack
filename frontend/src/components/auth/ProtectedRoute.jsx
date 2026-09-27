@@ -5,6 +5,10 @@ import Loading from "../Loading";
 
 const ProtectedRoute = ({ children }) => {
   const { data: user, isLoading } = useCurrentUser();
+//   const {
+//   data: user,
+//   isLoading: isUserLoading,
+// } = useCurrentUser();
   const location = useLocation();
 
   if (isLoading) {

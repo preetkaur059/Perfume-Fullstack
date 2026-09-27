@@ -95,7 +95,7 @@ const SellingProducts = () => {
                 <button
                   type="button"
                   onClick={() => productSwiper?.slidePrev()}
-                  disabled={!productSwiper || activeSlide === 0}
+                  disabled={!productSwiper}
                   aria-label="Show previous products"
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
                 >
@@ -104,7 +104,7 @@ const SellingProducts = () => {
                 <button
                   type="button"
                   onClick={() => productSwiper?.slideNext()}
-                  disabled={!productSwiper || productSwiper.isEnd}
+                  disabled={!productSwiper }
                   aria-label="Show next products"
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
                 >
@@ -115,6 +115,7 @@ const SellingProducts = () => {
               <Swiper
                 key={`${activeTab}-${searchItem}`}
                 modules={[Pagination]}
+                loop={true}
                 onSwiper={(swiper) => {
                   setProductSwiper(swiper);
                   setActiveSlide(swiper.activeIndex);
@@ -125,7 +126,7 @@ const SellingProducts = () => {
                 slidesPerGroup={1}
                 speed={550}
                 grabCursor
-                watchOverflow
+                
                 pagination={{ clickable: true }}
                 breakpoints={{
                   640: { slidesPerView: 2, spaceBetween: 20 },

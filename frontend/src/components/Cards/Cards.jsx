@@ -22,7 +22,13 @@ const Cards = ({ product }) => {
 
   const handleWishlist = () => {
     if (!user) {
-      toast.error("Please login first to add this product to your cart/wishlist.");
+      toast.error(
+        "Please login first to add this product to your cart/wishlist.",
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+
       return;
     }
 
@@ -37,7 +43,13 @@ const Cards = ({ product }) => {
 
   const handleAddToCart = () => {
     if (!user) {
-      toast.error("Please login first to add this product to your cart/wishlist.");
+      toast.error(
+        "Please login first to add this product to your cart/wishlist.",
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+
       return;
     }
 
@@ -47,8 +59,14 @@ const Cards = ({ product }) => {
 
   const handleBuyNow = () => {
     if (!user) {
-      toast.error("Please login first to add this product to your cart/wishlist.");
-      navigate("/login");
+      toast.error(
+        "Please login first to add this product to your cart/wishlist.",
+      );
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+
       return;
     }
 
@@ -75,8 +93,9 @@ const Cards = ({ product }) => {
           onClick={handleWishlist}
           aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
           className={`text-xl hover:scale-110 cursor-pointer
-          hover:text-lime-400 transition ${isInWishlist ? "text-lime-300" : "text-white"
-            }`}
+          hover:text-lime-400 transition ${
+            isInWishlist ? "text-lime-300" : "text-white"
+          }`}
         >
           <FaHeart />
         </button>
@@ -148,7 +167,6 @@ const Cards = ({ product }) => {
             </span>
           </button>
         </div>
-
       </div>
     </div>
   );

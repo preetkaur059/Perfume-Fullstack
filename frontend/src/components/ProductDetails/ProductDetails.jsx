@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 // import productList from "../Temp/Temp";
 import { StoreContext } from "../../context/StoreContext";
 import { FaHeart, FaStar } from "react-icons/fa";
@@ -9,6 +9,7 @@ import { useCurrentUser } from "@/hooks/auth/useAuth";
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { wishlist, addToWishlist, addToCart } = useContext(StoreContext);
   const { data: user } = useCurrentUser();
 
@@ -31,12 +32,13 @@ const ProductDetails = () => {
   }
 
   const productId = product._id ?? product.id;
-  const isInWishlist = wishlist.some((item) => (item._id ?? item.id) === productId);
+  const isInWishlist = wishlist.some(
+    (item) => (item._id ?? item.id) === productId,
+  );
 
   return (
     <div className="bg-black min-h-screen pt-35 text-white py-20">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-12 px-6">
-
         {/* Image */}
         <div>
           <img
@@ -48,7 +50,6 @@ const ProductDetails = () => {
 
         {/* Details */}
         <div>
-
           {/* Name */}
           <h1 className="text-3xl font-bold mb-3">{product.productName}</h1>
 
@@ -60,7 +61,10 @@ const ProductDetails = () => {
           {/* Rating */}
           <div className="flex text-yellow-400 text-xl gap-1 mb-4">
             {Array(
-              Math.min(5, Math.max(0, Math.floor(Number(product?.rating) || 0)))
+              Math.min(
+                5,
+                Math.max(0, Math.floor(Number(product?.rating) || 0)),
+              ),
             )
               .fill()
               .map((_, i) => (
@@ -74,18 +78,22 @@ const ProductDetails = () => {
           </p>
 
           {/* Description */}
-          <p className="text-gray-300 mb-8">
-            {product.description}
-          </p>
+          <p className="text-gray-300 mb-8">{product.description}</p>
 
           {/* Buttons */}
           <div className="flex gap-5">
-
             {/* Add To Cart */}
             <button
               onClick={() => {
+                console.log("Clicked Add To Cart");
+                console.log("Current user:", user);
                 if (!user) {
-                  toast.error("Please login first to add this product to your cart/wishlist.");
+                  toast.error(
+                    "Please login first to add this product to your cart/wishlist.",
+                  );
+                  setTimeout(() => {
+                    navigate("/login");
+                  }, 1000);
                   return;
                 }
                 addToCart(product);
@@ -100,7 +108,12 @@ const ProductDetails = () => {
             <button
               onClick={() => {
                 if (!user) {
-                  toast.error("Please login first to add this product to your cart/wishlist.");
+                  toast.error(
+                    "Please login first to add this product to your cart/wishlist.",
+                  );
+                  setTimeout(() => {
+                    navigate("/login");
+                  }, 1000);
                   return;
                 }
 
@@ -111,21 +124,16 @@ const ProductDetails = () => {
                 } else {
                   toast.success("Added to wishlist ❤️");
                 }
-
               }}
               className={`text-2xl cursor-pointer transition hover:scale-110
-                                ${isInWishlist
-                  ? "text-lime-300"
-                  : "text-white"
-                }`}
+                                ${
+                                  isInWishlist ? "text-lime-300" : "text-white"
+                                }`}
             >
               <FaHeart />
             </button>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
