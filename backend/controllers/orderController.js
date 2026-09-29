@@ -721,6 +721,10 @@ const updateAdminOrder = async (req, res) => {
       order.status = req.body.status;
     }
 
+    if (req.body.user && mongoose.isValidObjectId(req.body.user)) {
+      order.user = req.body.user;
+    }
+
     await order.save();
 
     await order.populate(orderPopulate);

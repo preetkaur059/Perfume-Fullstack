@@ -1,18 +1,27 @@
-import React, { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { toast } from "react-toastify";
+
+const forgotPasswordSchema = Yup.object({
+  email: Yup.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+});
 
 function ForgotPassword() {
-  const [email, setEmail] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!email) {
-      alert("Please enter your email address");
-      return;
-    }
-
-    console.log("Reset password link sent to:", email);
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+    },
+    validationSchema: forgotPasswordSchema,
+    onSubmit: (values) => {
+      console.log("Reset password link sent to:", values.email);
+      toast.success("Reset password link sent to your email!");
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -32,7 +41,7 @@ function ForgotPassword() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={formik.handleSubmit}>
 
           <div className="mb-6">
             <label className="block text-gray-300 text-sm mb-2">
@@ -41,20 +50,29 @@ function ForgotPassword() {
 
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Enter your email"
-              className="w-full bg-black border border-gray-700 rounded-lg
-              px-4 py-3 text-white placeholder-gray-600
-              outline-none focus:border-white transition"
+              className={`w-full bg-black border ${
+                formik.touched.email && formik.errors.email
+                  ? "border-red-500"
+                  : "border-gray-700"
+              } rounded-lg px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-white transition`}
             />
+
+            {formik.touched.email && formik.errors.email && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.email}
+              </p>
+            )}
           </div>
 
           {/* Button */}
           <button
             type="submit"
-            className="w-full bg-white text-black py-3 rounded-lg
-            font-medium hover:bg-gray-200 transition duration-300"
+            className="w-full bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-200 transition duration-300 cursor-pointer"
           >
             Send Reset Link
           </button>
@@ -63,12 +81,12 @@ function ForgotPassword() {
 
         {/* Back to Login */}
         <div className="text-center mt-6">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="text-gray-400 hover:text-white text-sm transition"
           >
             ← Back to Login
-          </a>
+          </Link>
         </div>
 
       </div>

@@ -21,6 +21,8 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import {
   Dialog,
@@ -68,12 +70,6 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState(null);
-
-  const [editForm, setEditForm] = useState({
-    fullName: "",
-    email: "",
-    isAdmin: false,
-  });
 
   // Debounce search input (350ms)
   useEffect(() => {
@@ -170,60 +166,82 @@ const Users = () => {
   };
 
   // ===============================
-  // DIALOG ACTIONS
+  // DIALOG ACTIONS & FORMIK
   // ===============================
+  const editUserValidationSchema = Yup.object({
+    fullName: Yup.string()
+      .trim()
+      .min(3, "Full name must be at least 3 characters")
+      .required("Full name is required"),
+    email: Yup.string()
+      .trim()
+      .email("Please enter a valid email address")
+      .required("Email is required"),
+    isAdmin: Yup.boolean(),
+  });
+
+  const initialUserValues = useMemo(() => {
+    return {
+      fullName: editingUser?.fullName || "",
+      email: editingUser?.email || "",
+      isAdmin: Boolean(editingUser?.role === "admin" || editingUser?.isAdmin),
+    };
+  }, [editingUser]);
+
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: initialUserValues,
+    validationSchema: editUserValidationSchema,
+    onSubmit: (values) => {
+      if (!editingUser?._id) return;
+
+      updateUserMutation.mutate(
+        {
+          id: editingUser._id,
+          userData: {
+            fullName: values.fullName.trim(),
+            email: values.email.trim(),
+            isAdmin: values.isAdmin,
+          },
+        },
+        {
+          onSuccess: async () => {
+            toast.success("User updated successfully");
+            closeEditDialog();
+            await handleRefresh();
+          },
+          onError: (err) => {
+            toast.error(
+              err?.response?.data?.msg ||
+                err?.response?.data?.message ||
+                "Failed to update user"
+            );
+          },
+        }
+      );
+    },
+  });
+
   const openEditDialog = (user) => {
     setEditingUser(user);
-    setEditForm({
-      fullName: user.fullName || "",
-      email: user.email || "",
-      isAdmin: Boolean(user.isAdmin),
+    formik.resetForm({
+      values: {
+        fullName: user?.fullName || "",
+        email: user?.email || "",
+        isAdmin: Boolean(user?.role === "admin" || user?.isAdmin),
+      },
     });
   };
 
   const closeEditDialog = () => {
     setEditingUser(null);
-    setEditForm({
-      fullName: "",
-      email: "",
-      isAdmin: false,
-    });
-  };
-
-  const handleUpdate = (e) => {
-    e.preventDefault();
-
-    if (!editingUser?._id) return;
-
-    if (!editForm.fullName.trim() || !editForm.email.trim()) {
-      toast.warning("Full name and email are required");
-      return;
-    }
-
-    updateUserMutation.mutate(
-      {
-        id: editingUser._id,
-        userData: {
-          fullName: editForm.fullName.trim(),
-          email: editForm.email.trim(),
-          isAdmin: editForm.isAdmin,
-        },
+    formik.resetForm({
+      values: {
+        fullName: "",
+        email: "",
+        isAdmin: false,
       },
-      {
-        onSuccess: async () => {
-          toast.success("User updated successfully");
-          closeEditDialog();
-          await handleRefresh();
-        },
-        onError: (err) => {
-          toast.error(
-            err?.response?.data?.msg ||
-              err?.response?.data?.message ||
-              "Failed to update user"
-          );
-        },
-      }
-    );
+    });
   };
 
   const confirmDelete = () => {
@@ -753,7 +771,7 @@ const Users = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleUpdate} className="mt-4 space-y-4">
+          <form onSubmit={formik.handleSubmit} className="mt-4 space-y-4">
             {/* Full Name */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -761,14 +779,22 @@ const Users = () => {
               </label>
               <input
                 type="text"
-                value={editForm.fullName}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, fullName: e.target.value }))
-                }
+                name="fullName"
+                value={formik.values.fullName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Full Name"
-                className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
-                required
+                className={`w-full rounded-xl border ${
+                  formik.touched.fullName && formik.errors.fullName
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
               />
+              {formik.touched.fullName && formik.errors.fullName && (
+                <p className="mt-1 text-xs text-red-500">
+                  {formik.errors.fullName}
+                </p>
+              )}
             </div>
 
             {/* Email */}
@@ -778,14 +804,22 @@ const Users = () => {
               </label>
               <input
                 type="email"
-                value={editForm.email}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, email: e.target.value }))
-                }
+                name="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="customer@domain.com"
-                className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
-                required
+                className={`w-full rounded-xl border ${
+                  formik.touched.email && formik.errors.email
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
               />
+              {formik.touched.email && formik.errors.email && (
+                <p className="mt-1 text-xs text-red-500">
+                  {formik.errors.email}
+                </p>
+              )}
             </div>
 
             {/* Role Select */}
@@ -794,13 +828,12 @@ const Users = () => {
                 Access Role
               </label>
               <select
-                value={editForm.isAdmin ? "admin" : "customer"}
+                name="isAdmin"
+                value={formik.values.isAdmin ? "admin" : "customer"}
                 onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    isAdmin: e.target.value === "admin",
-                  }))
+                  formik.setFieldValue("isAdmin", e.target.value === "admin")
                 }
+                onBlur={formik.handleBlur}
                 className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
               >
                 <option value="customer">Customer (Standard User)</option>
@@ -824,10 +857,10 @@ const Users = () => {
 
               <button
                 type="submit"
-                disabled={updateUserMutation.isPending}
+                disabled={updateUserMutation.isPending || formik.isSubmitting}
                 className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-lime-300 disabled:opacity-50"
               >
-                {updateUserMutation.isPending ? (
+                {updateUserMutation.isPending || formik.isSubmitting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
                     <span>Saving...</span>

@@ -1,11 +1,26 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import { StoreContext } from "../../context/StoreContext";
 import Heading from "../Heading/Heading";
 import { useCreateOrder } from "@/hooks/orders/useOrders";
 import { useCurrentUser } from "@/hooks/auth/useAuth";
+
+const checkoutValidationSchema = Yup.object({
+  firstName: Yup.string().trim().required("Full name is required"),
+  email: Yup.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  phone: Yup.string().trim().required("Phone number is required"),
+  street: Yup.string().trim().required("Address is required"),
+  city: Yup.string().trim().required("City is required"),
+  postalCode: Yup.string().trim().required("Postal code is required"),
+  state: Yup.string().trim().required("State is required"),
+});
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -28,8 +43,6 @@ const Checkout = () => {
   );
   const orderTotal = subTotal;
 
-  const [errors, setErrors] = useState({});
-
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { data: user } = useCurrentUser();
 
@@ -37,138 +50,80 @@ const Checkout = () => {
     clearBuyNow();
   }, [clearBuyNow]);
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!deliveryInfo.firstName?.trim()) {
-      newErrors.firstName = "Full name is required";
-    }
-
-    if (!deliveryInfo.email?.trim()) {
-      newErrors.email = "Email is required";
-    }
-
-    if (!deliveryInfo.phone?.trim()) {
-      newErrors.phone = "Phone number is required";
-    }
-
-    if (!deliveryInfo.street?.trim()) {
-      newErrors.street = "Address is required";
-    }
-
-    if (!deliveryInfo.city?.trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!deliveryInfo.postalCode?.trim()) {
-      newErrors.postalCode = "Postal code is required";
-    }
-
-    if (!deliveryInfo.state?.trim()) {
-      newErrors.state = "State is required";
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleProceed = (e) => {
-    e.preventDefault();
-
-    if (checkoutItems.length === 0) {
-      toast.error("Your cart is empty.");
-      return;
-    }
-
-    if (!user?.id) {
-      toast.error("Please log in to place an order.");
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    /*
-      Backend expects:
-
-      {
-        orderItems: [
-          {
-            product: "PRODUCT_ID",
-            quantity: 2
-          }
-        ]
+  const formik = useFormik({
+    initialValues: {
+      firstName: deliveryInfo?.firstName || "",
+      email: deliveryInfo?.email || "",
+      phone: deliveryInfo?.phone || "",
+      street: deliveryInfo?.street || "",
+      city: deliveryInfo?.city || "",
+      postalCode: deliveryInfo?.postalCode || "",
+      state: deliveryInfo?.state || "",
+    },
+    enableReinitialize: true,
+    validationSchema: checkoutValidationSchema,
+    onSubmit: (values) => {
+      if (checkoutItems.length === 0) {
+        toast.error("Your cart is empty.");
+        return;
       }
-    */
 
-    const orderItems = checkoutItems.map((item) => ({
-      // Cart entries are product objects. Only send their MongoDB ID, not the object.
-      product: item._id ?? item.id,
-      quantity: Number(item.quantity),
-    }));
+      if (!user?.id) {
+        toast.error("Please log in to place an order.");
+        return;
+      }
 
-    const hasInvalidOrderItem = orderItems.some(
-      (item) =>
-        !item.product ||
-        typeof item.product === "object" ||
-        !Number.isInteger(item.quantity) ||
-        item.quantity < 1,
-    );
-
-    if (hasInvalidOrderItem) {
-      toast.error("One or more cart items are invalid.");
-      return;
-    }
-
-    createOrder({
-      user: user?.id,
-      orderItems,
-      status: "Processing",
-    }, {
-      onSuccess: (response) => {
-        /*
-          Save the backend order temporarily so
-          OrderSuccess2 can display it after navigation.
-        */
-
-        const createdOrder = response?.data;
-
-        // Only cart checkout clears the cart. A Buy Now order leaves the
-        // shopper's existing cart unchanged.
-        if (buyNowItem) {
-          clearBuyNow();
-        } else {
-          clearCart();
-        }
-
-        // Pass backend order to success page
-        navigate("/OrderSuccess2", {
-          state: {
-            order: createdOrder,
-            deliveryInfo,
-          },
-        });
-      },
-    });
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setDeliveryInfo({
-      ...deliveryInfo,
-      [name]: value,
-    });
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
+      const orderItems = checkoutItems.map((item) => ({
+        // Cart entries are product objects. Only send their MongoDB ID, not the object.
+        product: item._id ?? item.id,
+        quantity: Number(item.quantity),
       }));
-    }
-  };
+
+      const hasInvalidOrderItem = orderItems.some(
+        (item) =>
+          !item.product ||
+          typeof item.product === "object" ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 1,
+      );
+
+      if (hasInvalidOrderItem) {
+        toast.error("One or more cart items are invalid.");
+        return;
+      }
+
+      setDeliveryInfo(values);
+
+      createOrder(
+        {
+          user: user?.id,
+          orderItems,
+          status: "Processing",
+        },
+        {
+          onSuccess: (response) => {
+            const createdOrder = response?.data;
+
+            // Only cart checkout clears the cart. A Buy Now order leaves the
+            // shopper's existing cart unchanged.
+            if (buyNowItem) {
+              clearBuyNow();
+            } else {
+              clearCart();
+            }
+
+            // Pass backend order to success page
+            navigate("/OrderSuccess2", {
+              state: {
+                order: createdOrder,
+                deliveryInfo: values,
+              },
+            });
+          },
+        }
+      );
+    },
+  });
 
   return (
     <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-6 md:px-20 py-12">
@@ -184,7 +139,8 @@ const Checkout = () => {
         <div className="lg:col-span-2 bg-[#111] border border-[#222] p-8 rounded-xl">
 
           <form
-            onSubmit={handleProceed}
+            id="checkout-form"
+            onSubmit={formik.handleSubmit}
             className="space-y-6"
           >
 
@@ -197,21 +153,20 @@ const Checkout = () => {
               <input
                 type="text"
                 name="firstName"
-                value={deliveryInfo.firstName || ""}
-                onChange={handleChange}
+                value={formik.values.firstName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Enter your full name"
-                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                focus:border-lime-300
-                ${
-                  errors.firstName
+                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                  formik.touched.firstName && formik.errors.firstName
                     ? "border-red-500"
                     : "border-[#222]"
                 }`}
               />
 
-              {errors.firstName && (
+              {formik.touched.firstName && formik.errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.firstName}
+                  {formik.errors.firstName}
                 </p>
               )}
             </div>
@@ -225,21 +180,20 @@ const Checkout = () => {
               <input
                 type="email"
                 name="email"
-                value={deliveryInfo.email || ""}
-                onChange={handleChange}
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Enter your email"
-                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                focus:border-lime-300
-                ${
-                  errors.email
+                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                  formik.touched.email && formik.errors.email
                     ? "border-red-500"
                     : "border-[#222]"
                 }`}
               />
 
-              {errors.email && (
+              {formik.touched.email && formik.errors.email && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.email}
+                  {formik.errors.email}
                 </p>
               )}
             </div>
@@ -253,21 +207,20 @@ const Checkout = () => {
               <input
                 type="text"
                 name="phone"
-                value={deliveryInfo.phone || ""}
-                onChange={handleChange}
+                value={formik.values.phone}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Enter your phone number"
-                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                focus:border-lime-300
-                ${
-                  errors.phone
+                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                  formik.touched.phone && formik.errors.phone
                     ? "border-red-500"
                     : "border-[#222]"
                 }`}
               />
 
-              {errors.phone && (
+              {formik.touched.phone && formik.errors.phone && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.phone}
+                  {formik.errors.phone}
                 </p>
               )}
             </div>
@@ -281,21 +234,20 @@ const Checkout = () => {
               <input
                 type="text"
                 name="street"
-                value={deliveryInfo.street || ""}
-                onChange={handleChange}
+                value={formik.values.street}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Street address"
-                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                focus:border-lime-300
-                ${
-                  errors.street
+                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                  formik.touched.street && formik.errors.street
                     ? "border-red-500"
                     : "border-[#222]"
                 }`}
               />
 
-              {errors.street && (
+              {formik.touched.street && formik.errors.street && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.street}
+                  {formik.errors.street}
                 </p>
               )}
             </div>
@@ -312,21 +264,20 @@ const Checkout = () => {
                 <input
                   type="text"
                   name="city"
-                  value={deliveryInfo.city || ""}
-                  onChange={handleChange}
+                  value={formik.values.city}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="City"
-                  className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                  focus:border-lime-300
-                  ${
-                    errors.city
+                  className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                    formik.touched.city && formik.errors.city
                       ? "border-red-500"
                       : "border-[#222]"
                   }`}
                 />
 
-                {errors.city && (
+                {formik.touched.city && formik.errors.city && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.city}
+                    {formik.errors.city}
                   </p>
                 )}
               </div>
@@ -340,21 +291,20 @@ const Checkout = () => {
                 <input
                   type="text"
                   name="postalCode"
-                  value={deliveryInfo.postalCode || ""}
-                  onChange={handleChange}
+                  value={formik.values.postalCode}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="Postal code"
-                  className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                  focus:border-lime-300
-                  ${
-                    errors.postalCode
+                  className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                    formik.touched.postalCode && formik.errors.postalCode
                       ? "border-red-500"
                       : "border-[#222]"
                   }`}
                 />
 
-                {errors.postalCode && (
+                {formik.touched.postalCode && formik.errors.postalCode && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.postalCode}
+                    {formik.errors.postalCode}
                   </p>
                 )}
               </div>
@@ -370,21 +320,20 @@ const Checkout = () => {
               <input
                 type="text"
                 name="state"
-                value={deliveryInfo.state || ""}
-                onChange={handleChange}
+                value={formik.values.state}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="State"
-                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none
-                focus:border-lime-300
-                ${
-                  errors.state
+                className={`w-full p-3 bg-[#0d0d0d] border rounded-lg outline-none focus:border-lime-300 ${
+                  formik.touched.state && formik.errors.state
                     ? "border-red-500"
                     : "border-[#222]"
                 }`}
               />
 
-              {errors.state && (
+              {formik.touched.state && formik.errors.state && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.state}
+                  {formik.errors.state}
                 </p>
               )}
             </div>
@@ -441,7 +390,7 @@ const Checkout = () => {
 
           <button
             type="button"
-            onClick={handleProceed}
+            onClick={formik.handleSubmit}
             disabled={checkoutItems.length === 0 || isPending}
             className="w-full cursor-pointer mt-8 py-3 rounded-lg
             bg-gradient-to-r from-lime-200 to-lime-300

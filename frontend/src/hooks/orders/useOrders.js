@@ -122,11 +122,16 @@ export const useUpdateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, orderItems, status }) => {
-      const response = await api.patch(`/admin/orders/${id}`, {
+    mutationFn: async ({ id, orderItems, status, customer, user }) => {
+      const payload = {
         orderItems,
         status,
-      });
+      };
+      const assignedUser = customer || user;
+      if (assignedUser) {
+        payload.user = assignedUser;
+      }
+      const response = await api.patch(`/admin/orders/${id}`, payload);
 
       return response.data;
     },

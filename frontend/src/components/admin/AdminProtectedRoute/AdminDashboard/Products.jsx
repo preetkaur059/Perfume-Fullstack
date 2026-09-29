@@ -23,6 +23,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import {
   Dialog,
@@ -86,7 +88,6 @@ const Products = () => {
   const [viewingProduct, setViewingProduct] = useState(null);
   const [deleteProductTarget, setDeleteProductTarget] = useState(null);
 
-  const [form, setForm] = useState(initialForm);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -200,11 +201,111 @@ const Products = () => {
   };
 
   // ===============================
-  // DIALOG HANDLERS
+  // DIALOG HANDLERS & FORMIK
   // ===============================
+  const productValidationSchema = Yup.object({
+    productName: Yup.string()
+      .trim()
+      .required("Product name is required"),
+    price: Yup.number()
+      .typeError("Price must be a number")
+      .positive("Price must be greater than zero")
+      .required("Price is required"),
+    category: Yup.string()
+      .trim()
+      .required("Category is required"),
+    rating: Yup.number()
+      .typeError("Rating must be a valid number")
+      .min(0, "Rating must be at least 0")
+      .max(5, "Rating cannot exceed 5")
+      .nullable(),
+    description: Yup.string().nullable(),
+    image: Yup.string().test(
+      "image-required",
+      "Please upload a product image",
+      function (value) {
+        if (!editingProduct && !value) {
+          return false;
+        }
+        return true;
+      }
+    ),
+  });
+
+  const initialProductValues = useMemo(() => {
+    if (editingProduct) {
+      return {
+        productName: editingProduct.productName || "",
+        price:
+          editingProduct.price !== undefined && editingProduct.price !== null
+            ? editingProduct.price
+            : "",
+        category: editingProduct.category || "Unisex",
+        rating:
+          editingProduct.rating !== undefined && editingProduct.rating !== null
+            ? editingProduct.rating
+            : "4.5",
+        description: editingProduct.description || "",
+        image: editingProduct.image || "",
+      };
+    }
+    return initialForm;
+  }, [editingProduct]);
+
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: initialProductValues,
+    validationSchema: productValidationSchema,
+    onSubmit: (values) => {
+      const productPayload = {
+        productName: values.productName.trim(),
+        price: Number(values.price),
+        category: values.category.trim(),
+        rating: values.rating ? Number(values.rating) : 0,
+        description: values.description?.trim() || "",
+        image: values.image || editingProduct?.image || "",
+      };
+
+      if (editingProduct) {
+        updateProductMutation.mutate(
+          {
+            productId: editingProduct._id,
+            productData: productPayload,
+          },
+          {
+            onSuccess: async () => {
+              toast.success("Product updated successfully");
+              closeDialog();
+              await handleRefresh();
+            },
+            onError: (err) => {
+              toast.error(
+                err.response?.data?.message || "Failed to update product"
+              );
+            },
+          }
+        );
+      } else {
+        createProductMutation.mutate(productPayload, {
+          onSuccess: async () => {
+            toast.success("Product created successfully");
+            closeDialog();
+            setPage(1);
+            await handleRefresh();
+          },
+          onError: (err) => {
+            toast.error(
+              err.response?.data?.message || "Failed to create product"
+            );
+          },
+        });
+      }
+    },
+  });
+
   const openAddForm = () => {
     setEditingProduct(null);
-    setForm(initialForm);
+    formik.resetForm({ values: initialForm });
     setSelectedImage(null);
     setImagePreview("");
     setIsDialogOpen(true);
@@ -212,40 +313,40 @@ const Products = () => {
 
   const openEditForm = (product) => {
     setEditingProduct(product);
-    setForm({
-      productName: product.productName || "",
-      price: product.price || "",
-      category: product.category || "Unisex",
-      rating: product.rating ?? "4.5",
-      description: product.description || "",
-      image: product.image || "",
+    formik.resetForm({
+      values: {
+        productName: product?.productName || "",
+        price:
+          product?.price !== undefined && product?.price !== null
+            ? product.price
+            : "",
+        category: product?.category || "Unisex",
+        rating:
+          product?.rating !== undefined && product?.rating !== null
+            ? product.rating
+            : "4.5",
+        description: product?.description || "",
+        image: product?.image || "",
+      },
     });
     setSelectedImage(null);
-    setImagePreview(product.image || "");
+    setImagePreview(product?.image || "");
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingProduct(null);
-    setForm(initialForm);
+    formik.resetForm({ values: initialForm });
     setSelectedImage(null);
     setImagePreview("");
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const handleImageChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const previousImage = form.image;
+    const previousImage = formik.values.image;
     const localPreview = URL.createObjectURL(file);
     setSelectedImage(file);
     setImagePreview(localPreview);
@@ -253,7 +354,7 @@ const Products = () => {
 
     try {
       const imageUrl = await uploadToCloudinary(file);
-      setForm((currentForm) => ({ ...currentForm, image: imageUrl }));
+      formik.setFieldValue("image", imageUrl);
       setImagePreview(imageUrl);
       setSelectedImage(null);
       toast.success("Image uploaded successfully");
@@ -264,69 +365,6 @@ const Products = () => {
     } finally {
       setUploadingImage(false);
       event.target.value = "";
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!form.productName.trim() || !form.price || !form.category.trim()) {
-      toast.warning("Product name, price, and category are required");
-      return;
-    }
-
-    if (Number(form.price) <= 0) {
-      toast.warning("Price must be greater than zero");
-      return;
-    }
-
-    if (!editingProduct && !form.image) {
-      toast.warning("Please upload a product image");
-      return;
-    }
-
-    const productPayload = {
-      productName: form.productName.trim(),
-      price: Number(form.price),
-      category: form.category.trim(),
-      rating: form.rating ? Number(form.rating) : 0,
-      description: form.description?.trim() || "",
-      image: form.image,
-    };
-
-    if (editingProduct) {
-      updateProductMutation.mutate(
-        {
-          productId: editingProduct._id,
-          productData: productPayload,
-        },
-        {
-          onSuccess: async () => {
-            toast.success("Product updated successfully");
-            closeDialog();
-            await handleRefresh();
-          },
-          onError: (err) => {
-            toast.error(
-              err.response?.data?.message || "Failed to update product"
-            );
-          },
-        }
-      );
-    } else {
-      createProductMutation.mutate(productPayload, {
-        onSuccess: async () => {
-          toast.success("Product created successfully");
-          closeDialog();
-          setPage(1);
-          await handleRefresh();
-        },
-        onError: (err) => {
-          toast.error(
-            err.response?.data?.message || "Failed to create product"
-          );
-        },
-      });
     }
   };
 
@@ -858,7 +896,7 @@ const Products = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <form onSubmit={formik.handleSubmit} className="mt-4 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Product Name */}
               <div>
@@ -868,12 +906,21 @@ const Products = () => {
                 <input
                   type="text"
                   name="productName"
-                  value={form.productName}
-                  onChange={handleFormChange}
+                  value={formik.values.productName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="e.g. Amber Oud Noir"
-                  className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
-                  required
+                  className={`w-full rounded-xl border ${
+                    formik.touched.productName && formik.errors.productName
+                      ? "border-red-500"
+                      : "border-[#292929]"
+                  } bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
                 />
+                {formik.touched.productName && formik.errors.productName && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {formik.errors.productName}
+                  </p>
+                )}
               </div>
 
               {/* Price */}
@@ -886,12 +933,21 @@ const Products = () => {
                   name="price"
                   min="1"
                   step="1"
-                  value={form.price}
-                  onChange={handleFormChange}
+                  value={formik.values.price}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="e.g. 2499"
-                  className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
-                  required
+                  className={`w-full rounded-xl border ${
+                    formik.touched.price && formik.errors.price
+                      ? "border-red-500"
+                      : "border-[#292929]"
+                  } bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
                 />
+                {formik.touched.price && formik.errors.price && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {formik.errors.price}
+                  </p>
+                )}
               </div>
 
               {/* Category */}
@@ -901,14 +957,32 @@ const Products = () => {
                 </label>
                 <select
                   name="category"
-                  value={form.category}
-                  onChange={handleFormChange}
-                  className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
+                  value={formik.values.category}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full rounded-xl border ${
+                    formik.touched.category && formik.errors.category
+                      ? "border-red-500"
+                      : "border-[#292929]"
+                  } bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
                 >
+                  {formik.values.category &&
+                    !["Men", "Women", "Unisex"].includes(
+                      formik.values.category
+                    ) && (
+                      <option value={formik.values.category}>
+                        {formik.values.category}
+                      </option>
+                    )}
                   <option value="Men">Men</option>
                   <option value="Women">Women</option>
                   <option value="Unisex">Unisex</option>
                 </select>
+                {formik.touched.category && formik.errors.category && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {formik.errors.category}
+                  </p>
+                )}
               </div>
 
               {/* Rating */}
@@ -922,11 +996,21 @@ const Products = () => {
                   min="0"
                   max="5"
                   step="0.1"
-                  value={form.rating}
-                  onChange={handleFormChange}
+                  value={formik.values.rating}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="e.g. 4.8"
-                  className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
+                  className={`w-full rounded-xl border ${
+                    formik.touched.rating && formik.errors.rating
+                      ? "border-red-500"
+                      : "border-[#292929]"
+                  } bg-[#111] px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
                 />
+                {formik.touched.rating && formik.errors.rating && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {formik.errors.rating}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -936,7 +1020,11 @@ const Products = () => {
                 Product Image {!editingProduct && <span className="text-lime-400">*</span>}
               </label>
 
-              <div className="rounded-xl border border-dashed border-[#333] bg-[#111] p-4 transition hover:border-lime-400/40">
+              <div className={`rounded-xl border ${
+                formik.touched.image && formik.errors.image
+                  ? "border-red-500"
+                  : "border-dashed border-[#333]"
+              } bg-[#111] p-4 transition hover:border-lime-400/40`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#222] bg-[#181818]">
                     {imagePreview ? (
@@ -978,6 +1066,11 @@ const Products = () => {
                   </div>
                 </div>
               </div>
+              {formik.touched.image && formik.errors.image && (
+                <p className="mt-1 text-xs text-red-500">
+                  {formik.errors.image}
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -987,12 +1080,22 @@ const Products = () => {
               </label>
               <textarea
                 name="description"
-                value={form.description}
-                onChange={handleFormChange}
+                value={formik.values.description}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Fragrance notes, ingredients, mood, and olfactory description..."
                 rows={3}
-                className="w-full resize-none rounded-xl border border-[#292929] bg-[#111] p-3 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
+                className={`w-full resize-none rounded-xl border ${
+                  formik.touched.description && formik.errors.description
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] p-3 text-sm text-white placeholder-gray-600 outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
               />
+              {formik.touched.description && formik.errors.description && (
+                <p className="mt-1 text-xs text-red-500">
+                  {formik.errors.description}
+                </p>
+              )}
             </div>
 
             {/* Dialog Footer Actions */}

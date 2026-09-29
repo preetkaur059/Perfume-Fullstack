@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Settings as SettingsIcon,
   Shield,
@@ -9,21 +9,39 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/auth/useAuth";
 
+const settingsValidationSchema = Yup.object({
+  storeName: Yup.string().trim().required("Store name is required"),
+  supportEmail: Yup.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .required("Customer support email is required"),
+  currency: Yup.string().required("Primary currency is required"),
+  emailNotifications: Yup.boolean(),
+  lowStockAlert: Yup.boolean(),
+});
+
 const Settings = () => {
   const { data: user } = useCurrentUser();
-  const [storeName, setStoreName] = useState("ZIVARA Perfumes");
-  const [supportEmail, setSupportEmail] = useState("support@zivara.com");
-  const [currency, setCurrency] = useState("INR");
-  const [lowStockAlert, setLowStockAlert] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    toast.success("Store settings updated successfully");
-  };
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      storeName: "ZIVARA Perfumes",
+      supportEmail: user?.email || "support@zivara.com",
+      currency: "INR",
+      emailNotifications: true,
+      lowStockAlert: true,
+    },
+    validationSchema: settingsValidationSchema,
+    onSubmit: () => {
+      toast.success("Store settings updated successfully");
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black p-4 text-white sm:p-6 lg:p-8">
@@ -77,7 +95,7 @@ const Settings = () => {
         </div>
 
         {/* General Store Settings */}
-        <form onSubmit={handleSave} className="rounded-2xl border border-[#222] bg-[#0b0b0b] p-6 space-y-5">
+        <form onSubmit={formik.handleSubmit} className="rounded-2xl border border-[#222] bg-[#0b0b0b] p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-400/10 text-blue-400">
               <Store size={18} />
@@ -92,10 +110,19 @@ const Settings = () => {
               </label>
               <input
                 type="text"
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400"
+                name="storeName"
+                value={formik.values.storeName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full rounded-xl border ${
+                  formik.touched.storeName && formik.errors.storeName
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400`}
               />
+              {formik.touched.storeName && formik.errors.storeName && (
+                <p className="mt-1 text-xs text-red-500">{formik.errors.storeName}</p>
+              )}
             </div>
 
             <div>
@@ -104,10 +131,19 @@ const Settings = () => {
               </label>
               <input
                 type="email"
-                value={supportEmail}
-                onChange={(e) => setSupportEmail(e.target.value)}
-                className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400"
+                name="supportEmail"
+                value={formik.values.supportEmail}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full rounded-xl border ${
+                  formik.touched.supportEmail && formik.errors.supportEmail
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400`}
               />
+              {formik.touched.supportEmail && formik.errors.supportEmail && (
+                <p className="mt-1 text-xs text-red-500">{formik.errors.supportEmail}</p>
+              )}
             </div>
 
             <div>
@@ -115,14 +151,23 @@ const Settings = () => {
                 Primary Currency
               </label>
               <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400"
+                name="currency"
+                value={formik.values.currency}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full rounded-xl border ${
+                  formik.touched.currency && formik.errors.currency
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-2.5 text-sm text-white outline-none focus:border-lime-400`}
               >
                 <option value="INR">INR (₹ - Indian Rupee)</option>
                 <option value="USD">USD ($ - US Dollar)</option>
                 <option value="EUR">EUR (€ - Euro)</option>
               </select>
+              {formik.touched.currency && formik.errors.currency && (
+                <p className="mt-1 text-xs text-red-500">{formik.errors.currency}</p>
+              )}
             </div>
           </div>
 
@@ -137,8 +182,10 @@ const Settings = () => {
               </div>
               <input
                 type="checkbox"
-                checked={emailNotifications}
-                onChange={(e) => setEmailNotifications(e.target.checked)}
+                name="emailNotifications"
+                checked={formik.values.emailNotifications}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="h-5 w-5 accent-lime-400"
               />
             </div>
@@ -150,8 +197,10 @@ const Settings = () => {
               </div>
               <input
                 type="checkbox"
-                checked={lowStockAlert}
-                onChange={(e) => setLowStockAlert(e.target.checked)}
+                name="lowStockAlert"
+                checked={formik.values.lowStockAlert}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="h-5 w-5 accent-lime-400"
               />
             </div>
@@ -160,7 +209,7 @@ const Settings = () => {
           <div className="flex justify-end pt-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-lime-300"
+              className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-lime-300 cursor-pointer"
             >
               <Save size={16} />
               <span>Save Changes</span>

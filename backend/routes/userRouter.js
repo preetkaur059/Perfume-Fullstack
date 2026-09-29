@@ -11,6 +11,7 @@ import {
   updateUser,
 } from "../controllers/userController.js";
 import isLoggedIn from "../middlewares/isLoggedIn.js";
+import { sendSignupOTP, verifySignupOTP } from "../controllers/otpController.js";
 
 const router = express.Router();
 
@@ -25,5 +26,9 @@ router.post("/logout", logoutUser);
 
 router.patch("/:id", updateUser);
 router.delete("/:id", deleteUser);
+
+router.post("/send-signup-otp", sendSignupOTP);
+
+router.post("/verify-signup-otp", verifySignupOTP);
 
 export default router;

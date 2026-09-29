@@ -3,6 +3,8 @@ import {
   Package, Trash2, RefreshCw, Loader2, ShoppingBag, Pencil, Plus, X, User, Users, CalendarDays, Eye, CheckCircle, Truck, Box, Search, ArrowUpDown, DollarSign, AlertCircle, Copy, Check, RotateCcw,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -153,13 +155,8 @@ const Orders = () => {
   const [deleteOrder, setDeleteOrder] = useState(null);
 
   // Form states
-  const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
-  const [formData, setFormData] = useState({
-    status: "Processing",
-    orderItems: [],
-  });
 
   // Copy Order ID helper
   const handleCopyOrderId = (id) => {
@@ -176,15 +173,83 @@ const Orders = () => {
   };
 
   // ===============================
-  // DIALOG ACTIONS
+  // DIALOG ACTIONS & FORMIK
   // ===============================
-  const openCreateDialog = () => {
-    setEditingOrder(null);
-    setFormData({
+  const orderValidationSchema = Yup.object({
+    customer: Yup.string().required("Please select a customer"),
+    status: Yup.string().required("Status is required"),
+    orderItems: Yup.array()
+      .min(1, "Order must contain at least one product")
+      .required("Order must contain at least one product"),
+  });
+
+  const initialOrderValues = useMemo(() => {
+    if (editingOrder) {
+      return {
+        customer: editingOrder.user?._id || editingOrder.user || "",
+        status: editingOrder.status || "Processing",
+        orderItems:
+          editingOrder.orderItems?.map((item) => ({
+            product: item.product?._id || item.product || "",
+            quantity: Number(item.quantity) || 1,
+          })) || [],
+      };
+    }
+    return {
+      customer: "",
       status: "Processing",
       orderItems: [],
+    };
+  }, [editingOrder]);
+
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: initialOrderValues,
+    validationSchema: orderValidationSchema,
+    onSubmit: (values) => {
+      if (editingOrder) {
+        updateOrderMutation.mutate(
+          {
+            id: editingOrder._id,
+            customer: values.customer,
+            orderItems: values.orderItems,
+            status: values.status,
+          },
+          {
+            onSuccess: async () => {
+              closeDialog();
+              await handleRefresh();
+            },
+          }
+        );
+      } else {
+        createOrderMutation.mutate(
+          {
+            user: values.customer,
+            orderItems: values.orderItems,
+            status: values.status,
+          },
+          {
+            onSuccess: async () => {
+              closeDialog();
+              setPage(1);
+              await handleRefresh();
+            },
+          }
+        );
+      }
+    },
+  });
+
+  const openCreateDialog = () => {
+    setEditingOrder(null);
+    formik.resetForm({
+      values: {
+        customer: "",
+        status: "Processing",
+        orderItems: [],
+      },
     });
-    setSelectedCustomer("");
     setSelectedProduct("");
     setNewItemQuantity(1);
     setIsDialogOpen(true);
@@ -192,15 +257,17 @@ const Orders = () => {
 
   const openEditDialog = (order) => {
     setEditingOrder(order);
-    setFormData({
-      status: order.status || "Processing",
-      orderItems:
-        order.orderItems?.map((item) => ({
-          product: item.product?._id || item.product || "",
-          quantity: item.quantity || 1,
-        })) || [],
+    formik.resetForm({
+      values: {
+        customer: order?.user?._id || order?.user || "",
+        status: order?.status || "Processing",
+        orderItems:
+          order?.orderItems?.map((item) => ({
+            product: item.product?._id || item.product || "",
+            quantity: Number(item.quantity) || 1,
+          })) || [],
+      },
     });
-    setSelectedCustomer("");
     setSelectedProduct("");
     setNewItemQuantity(1);
     setIsDialogOpen(true);
@@ -209,12 +276,14 @@ const Orders = () => {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingOrder(null);
-    setSelectedCustomer("");
     setSelectedProduct("");
     setNewItemQuantity(1);
-    setFormData({
-      status: "Processing",
-      orderItems: [],
+    formik.resetForm({
+      values: {
+        customer: "",
+        status: "Processing",
+        orderItems: [],
+      },
     });
   };
 
@@ -230,96 +299,47 @@ const Orders = () => {
       return;
     }
 
-    setFormData((prev) => {
-      const existingItem = prev.orderItems.find(
-        (item) => item.product === selectedProduct
+    const currentItems = formik.values.orderItems;
+    const existingIndex = currentItems.findIndex(
+      (item) => item.product === selectedProduct
+    );
+
+    let updatedItems;
+    if (existingIndex > -1) {
+      updatedItems = currentItems.map((item, idx) =>
+        idx === existingIndex
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
       );
+    } else {
+      updatedItems = [
+        ...currentItems,
+        { product: selectedProduct, quantity },
+      ];
+    }
 
-      if (existingItem) {
-        return {
-          ...prev,
-          orderItems: prev.orderItems.map((item) =>
-            item.product === selectedProduct
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          ),
-        };
-      }
-
-      return {
-        ...prev,
-        orderItems: [
-          ...prev.orderItems,
-          { product: selectedProduct, quantity },
-        ],
-      };
-    });
-
+    formik.setFieldValue("orderItems", updatedItems);
     setSelectedProduct("");
     setNewItemQuantity(1);
   };
 
+  const handleUpdateItemQuantity = (productId, delta) => {
+    const currentItems = formik.values.orderItems;
+    const updated = currentItems.map((item) => {
+      if (item.product === productId) {
+        const newQty = Math.max(1, (Number(item.quantity) || 1) + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+    formik.setFieldValue("orderItems", updated);
+  };
+
   const handleRemoveItem = (productId) => {
-    setFormData((prev) => ({
-      ...prev,
-      orderItems: prev.orderItems.filter((item) => item.product !== productId),
-    }));
-  };
-
-  const handleCreateOrder = () => {
-    if (!selectedCustomer) {
-      toast.warning("Please select a customer.");
-      return;
-    }
-
-    if (formData.orderItems.length === 0) {
-      toast.warning("Please add at least one product.");
-      return;
-    }
-
-    createOrderMutation.mutate(
-      {
-        user: selectedCustomer,
-        orderItems: formData.orderItems,
-        status: formData.status,
-      },
-      {
-        onSuccess: async () => {
-          closeDialog();
-          setPage(1);
-          await handleRefresh();
-        },
-      }
+    formik.setFieldValue(
+      "orderItems",
+      formik.values.orderItems.filter((item) => item.product !== productId)
     );
-  };
-
-  const handleUpdateOrder = () => {
-    if (formData.orderItems.length === 0) {
-      toast.warning("Order must contain at least one product.");
-      return;
-    }
-
-    updateOrderMutation.mutate(
-      {
-        id: editingOrder._id,
-        orderItems: formData.orderItems,
-        status: formData.status,
-      },
-      {
-        onSuccess: async () => {
-          closeDialog();
-          await handleRefresh();
-        },
-      }
-    );
-  };
-
-  const handleSave = () => {
-    if (editingOrder) {
-      handleUpdateOrder();
-    } else {
-      handleCreateOrder();
-    }
   };
 
   const handleDeleteOrder = (order) => {
@@ -341,7 +361,17 @@ const Orders = () => {
   // HELPERS
   // ===============================
   const getProductById = (productId) => {
-    return products.find((product) => product._id === productId);
+    const fromList = products.find((product) => product._id === productId);
+    if (fromList) return fromList;
+    if (editingOrder?.orderItems) {
+      const fromOrder = editingOrder.orderItems.find(
+        (item) => (item.product?._id || item.product) === productId
+      );
+      if (fromOrder?.product && typeof fromOrder.product === "object") {
+        return fromOrder.product;
+      }
+    }
+    return null;
   };
 
   const formatDate = (date) => {
@@ -368,7 +398,7 @@ const Orders = () => {
   };
 
   const calculateFormTotal = () => {
-    return formData.orderItems.reduce((acc, item) => {
+    return formik.values.orderItems.reduce((acc, item) => {
       const prod = getProductById(item.product);
       return acc + (Number(prod?.price) || 0) * Number(item.quantity || 1);
     }, 0);
@@ -406,11 +436,20 @@ const Orders = () => {
     }
   };
 
-  // Customers filtered to exclude admin accounts for order assignment
-  const customerList = useMemo(
-    () => users.filter((u) => !u.isAdmin),
-    [users]
-  );
+  // Customers filtered to exclude admin accounts for order assignment, ensuring editing order's customer is included
+  const customerList = useMemo(() => {
+    const list = users.filter((u) => !u.isAdmin);
+    if (editingOrder?.user) {
+      const orderUser =
+        typeof editingOrder.user === "object"
+          ? editingOrder.user
+          : users.find((u) => u._id === editingOrder.user);
+      if (orderUser?._id && !list.some((u) => u._id === orderUser._id)) {
+        return [orderUser, ...list];
+      }
+    }
+    return list;
+  }, [users, editingOrder]);
 
   return (
     <div className="min-h-screen bg-black p-4 text-white sm:p-6 lg:p-8">
@@ -968,41 +1007,42 @@ const Orders = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4 space-y-5">
-            {/* Customer (Create Only) */}
-            {!editingOrder ? (
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-300">
-                  Select Customer <span className="text-lime-400">*</span>
-                </label>
-                <select
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
-                  disabled={usersLoading}
-                  className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-3 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
-                >
-                  <option value="">
-                    {usersLoading ? "Loading customers..." : "Choose a customer..."}
+          <form onSubmit={formik.handleSubmit} className="mt-4 space-y-5">
+            {/* Customer Selection */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-300">
+                Customer <span className="text-lime-400">*</span>
+              </label>
+              <select
+                name="customer"
+                value={formik.values.customer}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={usersLoading}
+                className={`w-full rounded-xl border ${
+                  formik.touched.customer && formik.errors.customer
+                    ? "border-red-500"
+                    : "border-[#292929]"
+                } bg-[#111] px-3.5 py-3 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30`}
+              >
+                <option value="">
+                  {usersLoading ? "Loading customers..." : "Choose a customer..."}
+                </option>
+                {customerList.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.fullName} — {user.email}
                   </option>
-                  {customerList.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.fullName} — {user.email}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1.5 text-xs text-gray-500">
-                  The order will be permanently assigned to this customer's account.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-[#222] bg-[#111] p-3.5">
-                <p className="text-xs uppercase tracking-wider text-gray-500">Customer</p>
-                <p className="mt-1 text-sm font-semibold text-white">
-                  {editingOrder.user?.fullName || "Customer"}
-                </p>
-                <p className="text-xs text-gray-400">{editingOrder.user?.email}</p>
-              </div>
-            )}
+                ))}
+              </select>
+              {formik.touched.customer && formik.errors.customer && (
+                <p className="mt-1 text-xs text-red-500">{formik.errors.customer}</p>
+              )}
+              <p className="mt-1.5 text-xs text-gray-500">
+                {editingOrder
+                  ? "Assigned customer for this order."
+                  : "The order will be permanently assigned to this customer's account."}
+              </p>
+            </div>
 
             {/* Product Selector */}
             <div>
@@ -1040,7 +1080,7 @@ const Orders = () => {
                   <button
                     type="button"
                     onClick={handleAddItem}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-lime-300"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-lime-300 cursor-pointer"
                   >
                     <Plus size={16} />
                     <span>Add</span>
@@ -1056,23 +1096,27 @@ const Orders = () => {
             <div>
               <div className="mb-2.5 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-gray-300">
-                  Order Items ({formData.orderItems.length})
+                  Order Items ({formik.values.orderItems.length})
                 </h4>
-                {formData.orderItems.length > 0 && (
+                {formik.values.orderItems.length > 0 && (
                   <span className="text-xs text-lime-400 font-semibold">
                     Subtotal: ₹{calculateFormTotal().toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
 
-              {formData.orderItems.length === 0 ? (
+              {formik.touched.orderItems && formik.errors.orderItems && (
+                <p className="mb-2 text-xs text-red-500">{formik.errors.orderItems}</p>
+              )}
+
+              {formik.values.orderItems.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[#292929] bg-[#111] p-6 text-center">
                   <ShoppingBag size={28} className="mx-auto mb-2 text-gray-600" />
                   <p className="text-sm text-gray-500">No products added to this order yet.</p>
                 </div>
               ) : (
                 <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-                  {formData.orderItems.map((item) => {
+                  {formik.values.orderItems.map((item) => {
                     const product = getProductById(item.product);
                     const itemTotal =
                       (Number(product?.price) || 0) * Number(item.quantity || 1);
@@ -1111,14 +1155,39 @@ const Orders = () => {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(item.product)}
-                          className="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-red-500/10 hover:text-red-400"
-                          title="Remove item"
-                        >
-                          <X size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center rounded-lg border border-[#292929] bg-[#161616]">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateItemQuantity(item.product, -1)}
+                              disabled={item.quantity <= 1}
+                              className="px-2 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                              title="Decrease quantity"
+                            >
+                              -
+                            </button>
+                            <span className="min-w-6 text-center text-xs font-semibold text-white">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateItemQuantity(item.product, 1)}
+                              className="px-2 py-1 text-xs text-gray-400 hover:text-white cursor-pointer"
+                              title="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(item.product)}
+                            className="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
+                            title="Remove item"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -1132,13 +1201,10 @@ const Orders = () => {
                 Order Status
               </label>
               <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    status: e.target.value,
-                  }))
-                }
+                name="status"
+                value={formik.values.status}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="w-full rounded-xl border border-[#292929] bg-[#111] px-3.5 py-3 text-sm text-white outline-none transition focus:border-lime-400 focus:ring-1 focus:ring-lime-400/30"
               >
                 {STATUS_OPTIONS.map((status) => (
@@ -1147,6 +1213,9 @@ const Orders = () => {
                   </option>
                 ))}
               </select>
+              {formik.touched.status && formik.errors.status && (
+                <p className="mt-1 text-xs text-red-500">{formik.errors.status}</p>
+              )}
             </div>
 
             {/* Dialog Footer Actions */}
@@ -1162,20 +1231,19 @@ const Orders = () => {
                 <button
                   type="button"
                   onClick={closeDialog}
-                  className="rounded-xl border border-[#292929] bg-[#111] px-4 py-2.5 text-sm font-medium text-gray-300 transition hover:bg-[#181818] hover:text-white"
+                  className="rounded-xl border border-[#292929] bg-[#111] px-4 py-2.5 text-sm font-medium text-gray-300 transition hover:bg-[#181818] hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
-                  type="button"
-                  onClick={handleSave}
+                  type="submit"
                   disabled={
-                    createOrderMutation.isPending || updateOrderMutation.isPending
+                    createOrderMutation.isPending || updateOrderMutation.isPending || formik.isSubmitting
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-lime-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
-                  {createOrderMutation.isPending || updateOrderMutation.isPending ? (
+                  {createOrderMutation.isPending || updateOrderMutation.isPending || formik.isSubmitting ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
                       <span>Saving...</span>
@@ -1186,7 +1254,7 @@ const Orders = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -1312,14 +1380,28 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Grand Total */}
-              <div className="flex items-center justify-between border-t border-[#222] pt-4">
-                <span className="text-sm font-medium text-gray-400">
-                  Total Order Amount
-                </span>
-                <span className="text-2xl font-bold text-lime-300">
-                  ₹{calculateTotal(viewingOrder).toLocaleString("en-IN")}
-                </span>
+              {/* Grand Total & Actions */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-[#222] pt-4">
+                <div>
+                  <span className="text-xs uppercase tracking-wider text-gray-400">
+                    Total Order Amount
+                  </span>
+                  <p className="text-2xl font-bold text-lime-300">
+                    ₹{calculateTotal(viewingOrder).toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const orderToEdit = viewingOrder;
+                    setViewingOrder(null);
+                    openEditDialog(orderToEdit);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-300 cursor-pointer"
+                >
+                  <Pencil size={15} />
+                  <span>Edit Order</span>
+                </button>
               </div>
             </div>
           )}

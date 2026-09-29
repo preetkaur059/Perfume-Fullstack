@@ -1,26 +1,35 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { toast } from "react-toastify";
+
+const resetPasswordSchema = Yup.object({
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password")], "Passwords do not match")
+    .required("Please confirm your password"),
+});
 
 function ResetPassword() {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!password || !confirmPassword) {
-      alert("Please fill in all fields");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    console.log("Password reset successfully");
-  };
+  const formik = useFormik({
+    initialValues: {
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: resetPasswordSchema,
+    onSubmit: () => {
+      console.log("Password reset successfully");
+      toast.success("Password reset successfully!");
+      navigate("/login");
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -38,7 +47,7 @@ function ResetPassword() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={formik.handleSubmit}>
 
           {/* New Password */}
           <div className="mb-5">
@@ -49,23 +58,32 @@ function ResetPassword() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Enter new password"
-                className="w-full bg-black border border-gray-700 rounded-lg
-                px-4 py-3 pr-16 text-white placeholder-gray-600
-                outline-none focus:border-white transition"
+                className={`w-full bg-black border ${
+                  formik.touched.password && formik.errors.password
+                    ? "border-red-500"
+                    : "border-gray-700"
+                } rounded-lg px-4 py-3 pr-16 text-white placeholder-gray-600 outline-none focus:border-white transition`}
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2
-                text-gray-400 hover:text-white text-sm"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-sm cursor-pointer"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+
+            {formik.touched.password && formik.errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.password}
+              </p>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -77,12 +95,16 @@ function ResetPassword() {
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                name="confirmPassword"
+                value={formik.values.confirmPassword}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Confirm new password"
-                className="w-full bg-black border border-gray-700 rounded-lg
-                px-4 py-3 pr-16 text-white placeholder-gray-600
-                outline-none focus:border-white transition"
+                className={`w-full bg-black border ${
+                  formik.touched.confirmPassword && formik.errors.confirmPassword
+                    ? "border-red-500"
+                    : "border-gray-700"
+                } rounded-lg px-4 py-3 pr-16 text-white placeholder-gray-600 outline-none focus:border-white transition`}
               />
 
               <button
@@ -90,19 +112,23 @@ function ResetPassword() {
                 onClick={() =>
                   setShowConfirmPassword(!showConfirmPassword)
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2
-                text-gray-400 hover:text-white text-sm"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-sm cursor-pointer"
               >
                 {showConfirmPassword ? "Hide" : "Show"}
               </button>
             </div>
+
+            {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.confirmPassword}
+              </p>
+            )}
           </div>
 
           {/* Reset Button */}
           <button
             type="submit"
-            className="w-full bg-white text-black py-3 rounded-lg
-            font-medium hover:bg-gray-200 transition duration-300"
+            className="w-full bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-200 transition duration-300 cursor-pointer"
           >
             Reset Password
           </button>
@@ -111,12 +137,12 @@ function ResetPassword() {
 
         {/* Back to Login */}
         <div className="text-center mt-6">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="text-gray-400 hover:text-white text-sm transition"
           >
             ← Back to Login
-          </a>
+          </Link>
         </div>
 
       </div>

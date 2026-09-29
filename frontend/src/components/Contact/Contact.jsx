@@ -1,22 +1,32 @@
-import React, { useState } from "react";
+import React from "react";
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { toast } from "react-toastify";
 import Heading from "../Heading/Heading";
 
+const contactValidationSchema = Yup.object({
+  username: Yup.string().trim().required("Name is required"),
+  email: Yup.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  msg: Yup.string().trim().required("Message is required"),
+});
+
 const Contact = () => {
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [msg, setMsg] = useState("")
-
-  // const user1 = {
-  //   name: "Param",
-  //   class: "BCA",
-  //   semester: 4  }
-
-  // const user2 = {
-  //   ...user1, semester:6
-  // }
-  
-
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+      email: "",
+      msg: "",
+    },
+    validationSchema: contactValidationSchema,
+    onSubmit: (values, { resetForm }) => {
+      toast.success("Thank you for reaching out! We will get back to you soon.");
+      resetForm();
+    },
+  });
 
   return (
     <div className="bg-black text-white pt-25 pb-20">
@@ -24,10 +34,7 @@ const Contact = () => {
 
         {/* Heading */}
         <div className="text-center mb-13">
-            <Heading highlight = 'Get In Touch'/>
-          {/* <h1 className="text-5xl font-semibold tracking-wide">
-            Get In Touch
-          </h1> */}
+          <Heading highlight="Get In Touch" />
           <p className="text-gray-400 mt-2 max-w-[600px] mx-auto leading-7">
             Have questions about our fragrances or your order? Our team is
             always ready to assist you. Feel free to contact us anytime.
@@ -71,33 +78,69 @@ const Contact = () => {
             Send Us A Message
           </h2>
 
-          <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
+          <form className="space-y-5" onSubmit={formik.handleSubmit}>
 
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={username}
-              onChange={(e)=>setUsername(e.target.value)}
-              className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
-            />
+            <div>
+              <input
+                type="text"
+                name="username"
+                placeholder="Your Name"
+                value={formik.values.username}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full p-3 bg-black border ${
+                  formik.touched.username && formik.errors.username
+                    ? "border-red-500"
+                    : "border-[#333]"
+                } rounded outline-none focus:border-lime-200`}
+              />
+              {formik.touched.username && formik.errors.username && (
+                <p className="text-red-500 text-sm mt-1">{formik.errors.username}</p>
+              )}
+            </div>
 
-            <input
-              type="email"
-              placeholder="Your Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
-            />
+            <div>
+              <input
+                type="email"
+                name="email"
+                placeholder="Your Email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full p-3 bg-black border ${
+                  formik.touched.email && formik.errors.email
+                    ? "border-red-500"
+                    : "border-[#333]"
+                } rounded outline-none focus:border-lime-200`}
+              />
+              {formik.touched.email && formik.errors.email && (
+                <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>
+              )}
+            </div>
 
-            <textarea
-              rows="5"
-              placeholder="Your Message"
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              className="w-full p-3 bg-black border border-[#333] rounded outline-none focus:border-lime-200"
-            ></textarea>
+            <div>
+              <textarea
+                rows="5"
+                name="msg"
+                placeholder="Your Message"
+                value={formik.values.msg}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full p-3 bg-black border ${
+                  formik.touched.msg && formik.errors.msg
+                    ? "border-red-500"
+                    : "border-[#333]"
+                } rounded outline-none focus:border-lime-200`}
+              ></textarea>
+              {formik.touched.msg && formik.errors.msg && (
+                <p className="text-red-500 text-sm mt-1">{formik.errors.msg}</p>
+              )}
+            </div>
 
-            <button className="w-full py-3 cursor-pointer bg-lime-200 text-black font-semibold rounded hover:bg-lime-300 hover:scale-102 transform duration-300 transition">
+            <button
+              type="submit"
+              className="w-full py-3 cursor-pointer bg-lime-200 text-black font-semibold rounded hover:bg-lime-300 hover:scale-102 transform duration-300 transition"
+            >
               Send Message
             </button>
 
@@ -111,19 +154,3 @@ const Contact = () => {
 };
 
 export default Contact;
-
-// const [formData, setFormData] = useState({
-//   name: "",
-//   email: ""
-// });
-
-// <input
-//   type="text"
-//   value={formData.name}
-//   onChange={(e) =>
-//     setFormData({
-//       ...formData,
-//       name: e.target.value
-//     })
-//   }
-// />

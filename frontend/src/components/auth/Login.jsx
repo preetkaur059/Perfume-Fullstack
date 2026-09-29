@@ -1,97 +1,55 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { useLogin } from "@/hooks/auth/useAuth";
+
+const loginValidationSchema = Yup.object({
+  email: Yup.string()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
-
-  // Form Data
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
-  // Errors
-  const [errors, setErrors] = useState({});
   const login = useLogin();
 
-  // Handle Input Change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: loginValidationSchema,
+    onSubmit: async (values, { setFieldError }) => {
+      try {
+        const data = await login.mutateAsync(values);
 
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+        if (data.success) {
+          toast.success("Login successful!");
 
-    // remove error when the user type
-    setErrors({
-      ...errors,
-      [name]: "",
-    });
-  };
+          const destination =
+            location.state?.from?.pathname ||
+            (data.user?.isAdmin ? "/admin" : "/");
 
-  // Validation
-  const validateForm = () => {
-    let newErrors = {};
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-    ) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password =
-        "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-
-    // true = no errors
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Login Submit
-  const handleLogin = async (e) => {
-  e.preventDefault();
-
-  const isValid = validateForm();
-
-  if (!isValid) {
-    return;
-  }
-
-  try {
-    const data = await login.mutateAsync(formData);
-
-    if (data.success) {
-      toast.success("Login successful!");
-
-      const destination =
-        location.state?.from?.pathname ||
-        (data.user?.isAdmin ? "/admin" : "/");
-
-      navigate(destination, { replace: true });
-    } else {
-      toast.error(data.msg || "Invalid email or password");
-    }
-
-  } catch (error) {
-    setErrors({
-      email: error.response?.data?.msg || "Server error. Please try again.",
-    });
-  }
-};
+          navigate(destination, { replace: true });
+        } else {
+          toast.error(data.msg || "Invalid email or password");
+          setFieldError("email", data.msg || "Invalid email or password");
+        }
+      } catch (error) {
+        setFieldError(
+          "email",
+          error.response?.data?.msg || "Server error. Please try again."
+        );
+      }
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-10 pt-30">
@@ -108,117 +66,100 @@ const Login = () => {
             Login to continue your fragrance journey
           </p>
 
-          {/* Email */}
-          <div className="mb-5">
-            <label className="block text-white mb-2 font-medium">
-              Email Address
-            </label>
+          <form onSubmit={formik.handleSubmit}>
+            {/* Email */}
+            <div className="mb-5">
+              <label className="block text-white mb-2 font-medium">
+                Email Address
+              </label>
 
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className={`w-full px-4 py-3 bg-black border
-                ${
-                  errors.email
+              <input
+                type="email"
+                name="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                placeholder="Enter your email"
+                className={`w-full px-4 py-3 bg-black border ${
+                  formik.touched.email && formik.errors.email
                     ? "border-red-500"
                     : "border-gray-700"
-                }
-                rounded-lg text-white placeholder-gray-500
-                outline-none focus:border-[#e2f2b0]
-                transition duration-300`}
-            />
-
-            {/* Email Error */}
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="mb-6">
-            <label className="block text-white mb-2 font-medium">
-              Password
-            </label>
-
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                className={`w-full px-4 py-3 pr-16 bg-black border
-                  ${
-                    errors.password
-                      ? "border-red-500"
-                      : "border-gray-700"
-                  }
-                  rounded-lg text-white placeholder-gray-500
-                  outline-none focus:border-[#e2f2b0]
-                  transition duration-300`}
+                } rounded-lg text-white placeholder-gray-500 outline-none focus:border-[#e2f2b0] transition duration-300`}
               />
 
-              {/* Show / Hide */}
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPassword(!showPassword)
-                }
-                  className="absolute right-4 top-1/2
-                -translate-y-1/2 text-[#e2f2b0]
-                text-sm cursor-pointer"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+              {/* Email Error */}
+              {formik.touched.email && formik.errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {formik.errors.email}
+                </p>
+              )}
             </div>
 
-            {/* Password Error */}
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password}
-              </p>
-            )}
-          </div>
+            {/* Password */}
+            <div className="mb-6">
+              <label className="block text-white mb-2 font-medium">
+                Password
+              </label>
 
-          {/* Forgot Password */}
-          <div className="flex justify-end mb-6">
-            <Link
-              to="/forgot-password"
-              className="text-[#e2f2b0] text-sm
-              hover:text-[#efc3c5] transition"
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter your password"
+                  className={`w-full px-4 py-3 pr-16 bg-black border ${
+                    formik.touched.password && formik.errors.password
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  } rounded-lg text-white placeholder-gray-500 outline-none focus:border-[#e2f2b0] transition duration-300`}
+                />
+
+                {/* Show / Hide */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#e2f2b0] text-sm cursor-pointer"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+
+              {/* Password Error */}
+              {formik.touched.password && formik.errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {formik.errors.password}
+                </p>
+              )}
+            </div>
+
+            {/* Forgot Password */}
+            <div className="flex justify-end mb-6">
+              <Link
+                to="/forgot-password"
+                className="text-[#e2f2b0] text-sm hover:text-[#efc3c5] transition"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={login.isPending}
+              className="w-full py-3 bg-gradient-to-b from-lime-200 to-lime-300 text-black font-bold text-lg rounded-lg cursor-pointer transition duration-300 hover:scale-[1.02] hover:bg-gradient-to-b hover:from-lime-300 hover:to-lime-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Forgot Password?
-            </Link>
-          </div>
-
-          {/* Login Button */}
-          <button
-            type="button"
-            onClick={handleLogin}
-            disabled={login.isPending}
-            className="w-full py-3
-            bg-gradient-to-b from-lime-200 to-lime-300
-            text-black font-bold text-lg rounded-lg
-            cursor-pointer transition duration-300
-            hover:scale-[1.02]
-            hover:bg-gradient-to-b
-            hover:from-lime-300 hover:to-lime-200"
-          >
-            {login.isPending ? "Logging in..." : "Login"}
-          </button>
+              {login.isPending ? "Logging in..." : "Login"}
+            </button>
+          </form>
 
           {/* Signup */}
           <p className="text-gray-400 text-center mt-7">
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-[#e2f2b0] font-semibold
-              hover:text-[#efc3c5] transition"
+              className="text-[#e2f2b0] font-semibold hover:text-[#efc3c5] transition"
             >
               Create Account
             </Link>
