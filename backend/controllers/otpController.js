@@ -25,7 +25,7 @@ export const sendSignupOTP = async (req, res) => {
                 message: "User already exists",
             });
         }
-// solve error 
+
         // Generate OTP
         const otp = generateOTP();
 
