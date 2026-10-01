@@ -82,23 +82,100 @@ export const sendSignupOTP = async (req, res) => {
     }
 };
 
+// export const verifySignupOTP = async (req, res) => {
+//     try {
+//         const { email, otp } = req.body;
+
+//         // Only email and OTP are required
+//         if (!email || !otp) {
+//             return res.status(400).json({
+//                 message: "Email and OTP are required",
+//             });
+//         }
+
+//         const normalizedEmail = email.trim().toLowerCase();
+
+//         // Find OTP
+//         const otpRecord = await OTP.findOne({
+//             email: normalizedEmail,
+//             otp: otp.trim(),
+//         });
+
+//         if (!otpRecord) {
+//             return res.status(400).json({
+//                 message: "Invalid OTP",
+//             });
+//         }
+
+//         // Check expiry
+//         if (otpRecord.expiresAt < new Date()) {
+//             await OTP.deleteOne({
+//                 _id: otpRecord._id,
+//             });
+
+//             return res.status(400).json({
+//                 message: "OTP expired",
+//             });
+//         }
+
+//         // Check if user already exists
+//         const existingUser = await User.findOne({
+//             email: normalizedEmail,
+//         });
+
+//         if (existingUser) {
+//             await OTP.deleteOne({
+//                 _id: otpRecord._id,
+//             });
+
+//             return res.status(400).json({
+//                 message: "User already exists",
+//             });
+//         }
+
+//         // Create user
+//         const user = await User.create({
+//             email: normalizedEmail,
+//             isAdmin: false,
+//             isEmailVerified: true,
+//         });
+
+//         // Delete OTP after successful verification
+//         await OTP.deleteOne({
+//             _id: otpRecord._id,
+//         });
+
+//         return res.status(201).json({
+//             message: "Signup successful",
+//             user: {
+//                 id: user._id,
+//                 email: user.email,
+//             },
+//         });
+
+//     } catch (error) {
+//         console.error("VERIFY OTP ERROR:", error);
+
+//         return res.status(500).json({
+//             message: "Signup failed",
+//             error: error.message,
+//         });
+//     }
+// };
 export const verifySignupOTP = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, fullName, password } = req.body;
 
-        // Only email and OTP are required
-        if (!email || !otp) {
+        if (!email || !otp || !fullName || !password) {
             return res.status(400).json({
-                message: "Email and OTP are required",
+                message: "All fields are required",
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
-
         // Find OTP
         const otpRecord = await OTP.findOne({
-            email: normalizedEmail,
-            otp: otp.trim(),
+            email,
+            otp,
         });
 
         if (!otpRecord) {
@@ -109,33 +186,30 @@ export const verifySignupOTP = async (req, res) => {
 
         // Check expiry
         if (otpRecord.expiresAt < new Date()) {
-            await OTP.deleteOne({
-                _id: otpRecord._id,
-            });
+            await OTP.deleteOne({ _id: otpRecord._id });
 
             return res.status(400).json({
                 message: "OTP expired",
             });
         }
 
-        // Check if user already exists
-        const existingUser = await User.findOne({
-            email: normalizedEmail,
-        });
+        // Check user again
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            await OTP.deleteOne({
-                _id: otpRecord._id,
-            });
-
             return res.status(400).json({
                 message: "User already exists",
             });
         }
 
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // Create user
         const user = await User.create({
-            email: normalizedEmail,
+            fullName,
+            email,
+            password: hashedPassword,
             isAdmin: false,
             isEmailVerified: true,
         });
@@ -149,16 +223,15 @@ export const verifySignupOTP = async (req, res) => {
             message: "Signup successful",
             user: {
                 id: user._id,
+                fullName: user.fullName,
                 email: user.email,
             },
         });
-
     } catch (error) {
-        console.error("VERIFY OTP ERROR:", error);
+        console.error(error);
 
         return res.status(500).json({
             message: "Signup failed",
-            error: error.message,
         });
     }
 };

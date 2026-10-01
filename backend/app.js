@@ -22,7 +22,7 @@ app.use(
 );
 
 app.use(json());
-app.use(cookieParser());
+app.use(cookieParser()); 
 
 app.use("/users", userRouter);
 app.use("/products", productsRouter);
