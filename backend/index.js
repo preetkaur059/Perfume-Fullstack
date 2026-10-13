@@ -2,6 +2,9 @@
 // parampreet kaur 
 import mongoose from "mongoose";
 import app from "./app.js"
+import dns from "node:dns";
+
+dns.setDefaultResultOrder("ipv4first");
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
