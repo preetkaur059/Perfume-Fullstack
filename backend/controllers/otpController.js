@@ -44,7 +44,7 @@ export const sendSignupOTP = async (req, res) => {
 
         // Send email
         await transporter.sendMail({
-            from: process.env.EMAIL_USER,
+            from: `"Perfume Store" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: "Perfume Store - Email Verification OTP",
 

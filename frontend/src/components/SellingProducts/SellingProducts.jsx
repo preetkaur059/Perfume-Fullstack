@@ -44,7 +44,7 @@ const SellingProducts = () => {
 
   // Keep this section focused on eight products. The complete catalogue is
   // still available from the "Explore Collection" button below.
-  const bestSellingProducts = searchedItems.slice(0, 8);
+  const bestSellingProducts = searchedItems.slice(0, 10);
 
   return (
     <div className="bg-black pt-10">
@@ -97,7 +97,7 @@ const SellingProducts = () => {
                   onClick={() => productSwiper?.slidePrev()}
                   disabled={!productSwiper}
                   aria-label="Show previous products"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
+                  className="flex h-10 w-10 items-center cursor-pointer justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
                 >
                   <ChevronLeft size={22} />
                 </button>
@@ -106,7 +106,7 @@ const SellingProducts = () => {
                   onClick={() => productSwiper?.slideNext()}
                   disabled={!productSwiper }
                   aria-label="Show next products"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
+                  className="flex h-10 w-10 items-center cursor-pointer justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
                 >
                   <ChevronRight size={22} />
                 </button>
