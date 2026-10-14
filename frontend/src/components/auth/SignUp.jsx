@@ -160,13 +160,13 @@ const Signup = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center px-4 py-30">
+        <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12 pt-28 sm:pt-32">
 
             <div className="w-full max-w-md">
 
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 sm:p-8 shadow-2xl">
 
-                    <h2 className="text-3xl mb-5 font-bold text-white text-center">
+                    <h2 className="text-2xl sm:text-3xl mb-5 font-bold text-white text-center">
                         {otpSent
                             ? "Verify Your Email"
                             : "Create Account"}

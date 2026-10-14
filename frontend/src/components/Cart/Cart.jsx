@@ -37,20 +37,20 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-6 md:px-20 py-12">
+    <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-4 sm:px-8 md:px-14 lg:px-20 py-12">
 
       {/* Heading */}
       <div className="text-center mb-3">
         <Heading highlight="Your Shopping Cart" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid lg:grid-cols-3 gap-8 lg:gap-10">
 
         {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
 
           {cart.length === 0 ? (
-            <div className="bg-[#111] border border-[#222] rounded-xl p-10 text-center">
+            <div className="bg-[#111] border border-[#222] rounded-xl p-8 sm:p-10 text-center">
               <h2 className="text-2xl font-semibold mb-3">
                 Your Cart is Empty
               </h2>
@@ -70,31 +70,31 @@ const Cart = () => {
               return (
                 <div
                   key={productId}
-                  className="flex flex-col md:flex-row items-center bg-[#111]
-                  border border-[#222] p-3 rounded-xl
-                  hover:shadow-xl hover:shadow-lime-300/10 transition"
+                  className="flex flex-col sm:flex-row items-center bg-[#111]
+                  border border-[#222] p-4 rounded-xl
+                  hover:shadow-xl hover:shadow-lime-300/10 transition gap-4"
                 >
 
                   {/* Image */}
                   <img
                     src={product.image}
                     alt={product.productName}
-                    className="w-22 h-22 object-cover rounded-lg"
+                    className="w-20 h-20 sm:w-22 sm:h-22 object-cover rounded-lg shrink-0"
                   />
 
                   {/* Details */}
-                  <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-                    <h3 className="text-xl font-semibold mb-2">
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-lg sm:text-xl font-semibold mb-1">
                       {product.productName}
                     </h3>
 
-                    <p className="text-lime-300 text-lg font-bold">
+                    <p className="text-lime-300 text-base sm:text-lg font-bold">
                       ${Number(product.price || 0).toFixed(2)}
                     </p>
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className="flex items-center gap-4 mt-4 md:mt-0">
+                  <div className="flex items-center gap-3">
 
                     <button
                       type="button"
@@ -129,9 +129,8 @@ const Cart = () => {
                         `${product.productName} removed from cart 🛒`
                       );
                     }}
-                    className="ml-6 mr-5 cursor-pointer text-2xl
-                    text-red-400 hover:text-red-600 transition
-                    mt-4 md:mt-0"
+                    className="cursor-pointer text-xl
+                    text-red-400 hover:text-red-600 transition"
                     aria-label="Remove product"
                   >
                     <FaTrash />

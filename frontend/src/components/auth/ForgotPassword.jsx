@@ -24,13 +24,13 @@ function ForgotPassword() {
   });
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12 pt-28 sm:pt-32">
 
-      <div className="w-full max-w-md bg-[#111111] border border-gray-800 rounded-2xl p-8 shadow-2xl">
+      <div className="w-full max-w-md bg-[#111111] border border-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
 
         {/* Heading */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-white tracking-wide">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-wide">
             Forgot Password?
           </h1>
 

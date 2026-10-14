@@ -9,8 +9,8 @@ void motion;
 
 const OurStory = () => {
   return (
-    <section className="bg-[#101010] ">
-      <div className="max-w-[1300px] mx-auto px-10 md:px-4">
+    <section className="bg-[#101010] py-12 md:py-0">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-8 md:px-4">
 
         <div className="flex flex-col md:flex-row justify-around items-center">
 
@@ -31,7 +31,7 @@ const OurStory = () => {
 
           {/* Content */}
           <motion.div
-            className="w-full max-w-[600px] m-12"
+            className="w-full max-w-[600px] my-8 mx-auto md:m-12"
             initial={{ x: 80, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}

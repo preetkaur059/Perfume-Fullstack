@@ -37,21 +37,21 @@ const ProductDetails = () => {
   );
 
   return (
-    <div className="bg-black min-h-screen pt-35 text-white py-20">
-      <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-12 px-6">
+    <div className="bg-black min-h-screen pt-28 sm:pt-32 text-white pb-20">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 px-4 sm:px-6">
         {/* Image */}
         <div>
           <img
             src={product.image}
             alt={product.productName}
-            className="w-full h-[420px] object-cover border border-[#222]"
+            className="w-full h-[280px] sm:h-[380px] md:h-[440px] object-cover border border-[#222] rounded-xl"
           />
         </div>
 
         {/* Details */}
         <div>
           {/* Name */}
-          <h1 className="text-3xl font-bold mb-3">{product.productName}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3">{product.productName}</h1>
 
           {/* Category */}
           <p className="text-gray-400 mb-2">

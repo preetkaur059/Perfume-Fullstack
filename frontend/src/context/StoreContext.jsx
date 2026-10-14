@@ -1,5 +1,6 @@
 import { createContext, useCallback, useState } from "react";
 import { toast } from "react-toastify";
+import useDebounce from "@/hooks/useDebounce";
 import { useCurrentUser } from "@/hooks/auth/useAuth";
 import {
   useCart,
@@ -40,8 +41,9 @@ export const StoreProvider = ({ children }) => {
   // Temporary UI state for immediate Buy Now purchases
   const [buyNowItem, setBuyNowItem] = useState(null);
 
-  // Search input UI state
+  // Search input UI state with 500ms debounce
   const [searchItem, setSearchItem] = useState("");
+  const debouncedSearchItem = useDebounce(searchItem, 500);
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     firstName: "",
@@ -180,6 +182,7 @@ export const StoreProvider = ({ children }) => {
         removeFromWishlist,
         searchItem,
         setSearchItem,
+        debouncedSearchItem,
         deliveryInfo,
         setDeliveryInfo,
         clearDeliveryInfo,

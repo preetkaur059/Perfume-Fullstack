@@ -29,20 +29,20 @@ const Contact = () => {
   });
 
   return (
-    <div className="bg-black text-white pt-25 pb-20">
-      <div className="max-w-[1200px] mx-auto px-6">
+    <div className="bg-black text-white pt-28 sm:pt-32 pb-20">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
 
         {/* Heading */}
-        <div className="text-center mb-13">
+        <div className="text-center mb-10 sm:mb-13">
           <Heading highlight="Get In Touch" />
-          <p className="text-gray-400 mt-2 max-w-[600px] mx-auto leading-7">
+          <p className="text-gray-400 mt-2 max-w-[600px] mx-auto leading-7 text-sm sm:text-base">
             Have questions about our fragrances or your order? Our team is
             always ready to assist you. Feel free to contact us anytime.
           </p>
         </div>
 
         {/* Contact Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-13">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mb-10 sm:mb-13">
 
           <div className="bg-[#111] border border-[#333] p-5 text-center rounded-lg hover:scale-102 transform duration-300 hover:border-lime-200 transition">
             <FaMapMarkerAlt className="text-2xl mx-auto mb-4 text-lime-200" />
@@ -61,7 +61,7 @@ const Contact = () => {
             </p>
           </div>
 
-          <div className="bg-[#111] border border-[#333] p-5 text-center rounded-lg hover:border-lime-200 hover:scale-102 transform duration-300 transition">
+          <div className="bg-[#111] border border-[#333] p-5 text-center rounded-lg hover:border-lime-200 hover:scale-102 transform duration-300 transition sm:col-span-2 md:col-span-1">
             <FaEnvelope className="text-2xl mx-auto mb-4 text-lime-200" />
             <h3 className="text-xl font-medium mb-2">Email Us</h3>
             <p className="text-gray-400">
@@ -72,7 +72,7 @@ const Contact = () => {
         </div>
 
         {/* Contact Form */}
-        <div className="max-w-[700px] mx-auto bg-[#111] border border-[#333] p-10 rounded-lg">
+        <div className="max-w-[700px] mx-auto bg-[#111] border border-[#333] p-5 sm:p-8 md:p-10 rounded-lg">
 
           <h2 className="text-2xl font-medium mb-6 text-center">
             Send Us A Message

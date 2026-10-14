@@ -76,8 +76,8 @@ const Navbar = () => {
     }, [showMenu]);
 
     return (
-        <header className={` z-99 fixed top-5 left-0 right-0  `}>
-            <nav className={`w-[95%] max-w-[1400px] backdrop-blur-3xl rounded-lg bg-white/5 border border-white/10  flex mx-auto md:h-[12vh] h-[10vh] md:px-10 px-5 items-center justify-between`}>
+        <header className="z-50 fixed top-5 left-0 right-0">
+            <nav className="w-[95%] max-w-[1400px] backdrop-blur-3xl rounded-lg bg-white/5 border border-white/10 flex mx-auto md:h-[12vh] h-[10vh] md:px-10 px-5 items-center justify-between">
                 <div className="">
                     <NavLink to="/" className='text-3xl text-white font-bold'>ZIVARA</NavLink>
                 </div>
@@ -96,7 +96,8 @@ const Navbar = () => {
                         <div
                             className="relative"
                             onMouseEnter={() => setOpen(true)}
-                            onMouseLeave={() => setOpen(false)}>
+                            onMouseLeave={() => setOpen(false)}
+                            onClick={() => setOpen((prev) => !prev)}>
                             <span
                                 className={`font-medium cursor-pointer tracking-wider ${isCategoryActive ? "text-lime-200" : "text-white hover:text-lime-200"
                                     }`}
@@ -145,8 +146,16 @@ const Navbar = () => {
                             onFocus={handleScroll}
                             onChange={handleSearchChange}
                             placeholder='Search perfume...' autoComplete='off' />
-                        <button className='h-10 w-10 cursor-pointer text-black flex justify-center items-center rounded-xl text-2xl bg-gradient-to-b from-lime-200 to-lime-300 '>
-                            <FaSearch className='bg- z-99' />
+                        <button
+                            type="button"
+                            aria-label="Search"
+                            onClick={() => {
+                                if (searchItem.trim() && !["/Allproducts", "/Men", "/Women", "/Unisex"].includes(location.pathname)) {
+                                    navigate("/Allproducts");
+                                }
+                            }}
+                            className='h-10 w-10 cursor-pointer text-black flex justify-center items-center rounded-xl text-2xl bg-gradient-to-b from-lime-200 to-lime-300 '>
+                            <FaSearch />
                         </button>
                     </div>
 
@@ -230,56 +239,71 @@ const Navbar = () => {
                 </div>
 
                 {/* mobile menu */}
-
-                <div className={`flex z-99 ${showMenu ? 'bg-black/90' : 'bg-lime-400/30'} border border-white/20
-                ${showMenu ? 'left-1/2' : ''} flex-col absolute p-10
-                items-center justify-center md:hidden top-30 -left-full transform -translate-x-1/2
-                transition-all duration-300 gap-12 text-2xl`}>
-                    <NavLink to="/" className='font-semibold tracking-wider text-lime-300'>Home</NavLink>
-                    <NavLink to="/Allproducts" onClick={handleLinkClick} className='font-semibold tracking-wider text-white hover:text-lime-300'>All Products</NavLink>
-                    <div className="relative">
-
+                <div
+                    className={`fixed top-24 left-1/2 -translate-x-1/2 w-[92%] max-w-sm rounded-2xl bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/15 p-6 flex flex-col items-center justify-center md:hidden transition-all duration-300 gap-6 text-xl shadow-2xl shadow-black/80 z-50 ${
+                        showMenu
+                            ? "opacity-100 scale-100 pointer-events-auto"
+                            : "opacity-0 scale-95 pointer-events-none -translate-y-4"
+                    }`}
+                >
+                    <NavLink to="/" onClick={handleLinkClick} className={({ isActive }) => `font-semibold tracking-wider ${isActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>Home</NavLink>
+                    <NavLink to="/Allproducts" onClick={handleLinkClick} className={({ isActive }) => `font-semibold tracking-wider ${isActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>All Products</NavLink>
+                    <div className="relative text-center">
                         {/* Categories Button */}
-                        <div className="relative"
-                            onMouseEnter={() => setOpen(true)}
-                            onMouseLeave={() => setOpen(false)}>
-                            <span className={`font-medium cursor-pointer tracking-wider ${isCategoryActive ? "text-lime-200" : "text-white hover:text-lime-200"}`}>
-                                Categories
+                        <div
+                            className="relative cursor-pointer"
+                            onClick={() => setOpen((prev) => !prev)}>
+                            <span className={`font-semibold tracking-wider ${isCategoryActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>
+                                Categories {open ? "▲" : "▼"}
                             </span>
 
                             {/* Dropdown */}
                             {open && (
-                                <div className="absolute top-8 left-0 w-40 bg-[#1a1a1a] text-white rounded shadow-lg border border-gray-700 overflow-hidden transition-all duration-300 z-50">
-
+                                <div className="mt-3 w-44 bg-[#141414] text-white rounded-xl shadow-xl border border-gray-700/80 overflow-hidden transition-all duration-300">
                                     <NavLink
                                         to="/Men" onClick={handleLinkClick}
-                                        className={` block px-4 py-2 hover:bg-[#272727] transition-colors duration-200`}>
+                                        className="block px-4 py-2 hover:bg-[#222] hover:text-lime-300 transition-colors duration-200">
                                         Men
                                     </NavLink>
-
                                     <NavLink
                                         to="/Women" onClick={handleLinkClick}
-                                        className="block px-4 py-2 hover:bg-[#272727] transition-colors duration-200">
+                                        className="block px-4 py-2 hover:bg-[#222] hover:text-lime-300 transition-colors duration-200">
                                         Women
                                     </NavLink>
-
                                     <NavLink
                                         to="/Unisex" onClick={handleLinkClick}
-                                        className="block px-4 py-2 hover:bg-[#272727] transition-colors duration-200">
+                                        className="block px-4 py-2 hover:bg-[#222] hover:text-lime-300 transition-colors duration-200">
                                         Unisex
                                     </NavLink>
-
                                 </div>
                             )}
                         </div>
-
                     </div>
-                    {/* <NavLink href="Process" className='font-semibold tracking-wider text-white hover:text-lime-300'>Process</NavLink> */}
-                    <NavLink to="/Contact" onClick={handleLinkClick} className='font-semibold tracking-wider text-white  hover:text-lime-300'>Contact Us</NavLink>
+                    <NavLink to="/Contact" onClick={handleLinkClick} className={({ isActive }) => `font-semibold tracking-wider ${isActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>Contact Us</NavLink>
 
-                    <div className="flex md:hidden text-white border-lime-500 border-2 rounded-xl">
-                        <input type="text" name='text' id='text' value={searchItem} onChange={handleSearchChange} className='flex-1 text-white h-[5vh] px-3 focus:outline-none' placeholder='Search perfume...' autoComplete='off' />
-                        <button className='h-10 w-10 text-white flex justify-center items-center rounded-lg text-xl bg-gradient-to-b from-lime-400 to-lime-500 '>
+                    {/* Mobile Search Bar */}
+                    <div className="w-full flex text-white border-lime-300/80 border-2 rounded-xl overflow-hidden mt-2">
+                        <input
+                            type="text"
+                            name='mobile-search'
+                            id='mobile-search'
+                            value={searchItem}
+                            onChange={handleSearchChange}
+                            className='flex-1 text-white h-11 px-3 bg-black/60 focus:outline-none placeholder:text-gray-400 text-base'
+                            placeholder='Search perfume...'
+                            autoComplete='off'
+                        />
+                        <button
+                            type="button"
+                            aria-label="Search"
+                            onClick={() => {
+                                if (searchItem.trim()) {
+                                    handleLinkClick();
+                                    navigate("/Allproducts");
+                                }
+                            }}
+                            className='h-11 w-11 text-black flex justify-center items-center text-lg bg-gradient-to-b from-lime-200 to-lime-300 cursor-pointer'
+                        >
                             <FaSearch />
                         </button>
                     </div>

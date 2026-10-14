@@ -126,17 +126,17 @@ const Checkout = () => {
   });
 
   return (
-    <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-6 md:px-20 py-12">
+    <div className="min-h-screen pt-28 bg-[#0d0d0d] text-white px-4 sm:px-8 md:px-14 lg:px-20 py-12">
 
       {/* Heading */}
       <div className="text-center">
         <Heading highlight="Delivery Information" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid lg:grid-cols-3 gap-8 lg:gap-10">
 
         {/* Form */}
-        <div className="lg:col-span-2 bg-[#111] border border-[#222] p-8 rounded-xl">
+        <div className="lg:col-span-2 bg-[#111] border border-[#222] p-5 sm:p-8 rounded-xl">
 
           <form
             id="checkout-form"
@@ -253,7 +253,7 @@ const Checkout = () => {
             </div>
 
             {/* City + Postal */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
 
               {/* City */}
               <div>
@@ -342,7 +342,7 @@ const Checkout = () => {
         </div>
 
         {/* Order Summary */}
-        <div className="bg-[#111] border border-[#222] p-8 rounded-xl h-fit sticky top-24">
+        <div className="bg-[#111] border border-[#222] p-5 sm:p-8 rounded-xl h-fit static lg:sticky top-28">
 
           <h2 className="text-2xl font-semibold mb-6 border-b border-[#222] pb-4">
             Order Summary

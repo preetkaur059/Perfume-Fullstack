@@ -60,18 +60,18 @@ const Payment = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white px-6 md:px-20 py-12 pt-28">
+    <div className="min-h-screen bg-[#0d0d0d] text-white px-4 sm:px-8 md:px-14 lg:px-20 py-12 pt-28">
 
       {/* Heading */}
-      <h1 className="text-4xl font-bold text-center mb-12 tracking-wider">
+      <h1 className="text-2xl sm:text-4xl font-bold text-center mb-8 sm:mb-12 tracking-wider">
         Payment Method
       </h1>
 
       <form onSubmit={formik.handleSubmit}>
-        <div className="grid lg:grid-cols-3 gap-10">
+        <div className="grid lg:grid-cols-3 gap-8 lg:gap-10">
 
           {/* Payment Options */}
-          <div className="lg:col-span-2 bg-[#111] border border-[#222] p-8 rounded-xl">
+          <div className="lg:col-span-2 bg-[#111] border border-[#222] p-5 sm:p-8 rounded-xl">
 
             {/* Method Selection */}
             <div className="space-y-4 mb-8">
@@ -150,7 +150,7 @@ const Payment = () => {
                   )}
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block mb-2 text-sm text-gray-400">
                       Expiry Date
@@ -212,7 +212,7 @@ const Payment = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-[#111] border border-[#222] p-8 rounded-xl h-fit sticky top-24">
+          <div className="bg-[#111] border border-[#222] p-5 sm:p-8 rounded-xl h-fit static lg:sticky top-28">
 
             <h2 className="text-2xl font-semibold mb-6 border-b border-[#222] pb-4">
               Order Summary

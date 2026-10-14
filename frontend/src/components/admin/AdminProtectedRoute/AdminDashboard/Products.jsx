@@ -92,12 +92,12 @@ const Products = () => {
   const [imagePreview, setImagePreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Debounce search input (350ms)
+  // Debounce search input (500ms)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchInput.trim());
       setPage(1);
-    }, 350);
+    }, 500);
 
     return () => clearTimeout(handler);
   }, [searchInput]);
@@ -719,7 +719,7 @@ const Products = () => {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[#222] bg-[#0b0b0b] shadow-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-300">
+            <table className="w-full min-w-[760px] text-left text-sm text-gray-300">
               <thead className="border-b border-[#222] bg-[#111] text-xs uppercase tracking-wider text-gray-400">
                 <tr>
                   <th scope="col" className="px-5 py-4 font-semibold">

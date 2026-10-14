@@ -9,7 +9,7 @@ const Footer = () => {
 
       {/* Top Border */}
 
-      <div className="flex gap-17 md:px-0 px-10 mt-10 max-w-7xl mx-auto pb-12 grid-cols-2 grid md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 px-6 sm:px-8 md:px-8 lg:px-12 mt-10 max-w-7xl mx-auto pb-12">
 
         {/* Brand */}
         <div className="">
@@ -27,13 +27,13 @@ const Footer = () => {
 
 
         {/* Quick Links */}
-        <div className="flex-2">
+        <div className="">
           <h3 className="text-lime-200 text-xl font-semibold mb-5">
             Quick Links
           </h3>
 
           <ul className="space-y-3 ">
-            <NavLink className="hover:text-lime-200 hover:translate-x-1 block transition cursor-pointer">
+            <NavLink to="/" className="hover:text-lime-200 hover:translate-x-1 block transition cursor-pointer">
               Home
             </NavLink>
             <NavLink to="/Allproducts"

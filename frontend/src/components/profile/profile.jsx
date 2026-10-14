@@ -38,12 +38,12 @@ const Profile = () => {
   if (isLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-32">
+    <div className="min-h-screen bg-black text-white px-4 py-28 sm:py-32">
       <div className="max-w-4xl mx-auto">
 
         {/* Heading */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-3xl sm:text-4xl font-bold">
             My Profile
           </h1>
 
@@ -53,7 +53,7 @@ const Profile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 md:p-10 shadow-2xl">
+        <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl">
 
           {/* Account Information */}
           <div>
@@ -140,7 +140,7 @@ const Profile = () => {
                     className="bg-black border border-white/10 rounded-xl p-5"
                   >
 
-                    Order Header
+                    {/* Order Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
 
                       <div>
@@ -148,7 +148,7 @@ const Profile = () => {
                           Order ID
                         </p>
 
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium break-all">
                           #{order._id}
                         </p>
                       </div>

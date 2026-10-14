@@ -52,13 +52,13 @@ const Login = () => {
   });
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-10 pt-30">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-10 pt-28 sm:pt-32">
       <div className="w-full max-w-md">
 
         {/* Login Card */}
-        <div className="bg-[#111111] border border-[#f5f5dc]/20 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-[#111111] border border-[#f5f5dc]/20 rounded-2xl p-6 sm:p-8 shadow-2xl">
 
-          <h2 className="text-3xl font-bold text-white text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
             Welcome Back
           </h2>
 

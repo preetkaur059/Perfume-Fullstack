@@ -19,6 +19,7 @@ app.use(
     // origin: process.env.CLIENT_ORIGIN || "https://perfume-fullstack.vercel.app/",
     origin: [
       "http://localhost:5173",
+      "http://localhost:5174",
       "https://perfume-fullstack.vercel.app",
     ],
     credentials: true,

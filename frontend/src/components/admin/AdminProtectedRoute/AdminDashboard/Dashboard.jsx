@@ -117,7 +117,7 @@ const Dashboard = () => {
       {/* ==================================================
           2. CORE METRICS
       ================================================== */}
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Sales */}
         <div className="rounded-2xl border border-[#222] bg-[#0b0b0b] p-5 transition hover:border-lime-400/30">
           <div className="flex items-center justify-between">

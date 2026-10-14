@@ -55,7 +55,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white px-6 md:px-20 pt-28">
+    <div className="min-h-screen bg-[#0d0d0d] text-white px-4 sm:px-8 md:px-14 lg:px-20 pt-28 pb-12">
       {/* Heading */}
       <div className="text-center">
         <Heading highlight="Your Orders" />
@@ -137,12 +137,12 @@ const Orders = () => {
               <div
                 key={order._id}
                 className="bg-[#111] border border-[#222]
-                rounded-2xl p-6 md:p-8
+                rounded-2xl p-4 sm:p-6 md:p-8
                 hover:shadow-xl hover:shadow-lime-300/10
                 transition duration-500"
               >
                 {/* Top Row */}
-                <div className="grid md:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
                   {/* Order ID */}
                   <div>
                     <p className="text-gray-400 text-sm">Order ID</p>
@@ -182,8 +182,8 @@ const Orders = () => {
                       return (
                         <div
                           key={index}
-                          className="flex flex-col md:flex-row
-                          md:items-center md:justify-between
+                          className="flex flex-col sm:flex-row
+                          sm:items-center sm:justify-between
                           gap-4 bg-[#161616]
                           border border-[#222]
                           p-4 rounded-lg"
@@ -194,7 +194,7 @@ const Orders = () => {
                               <img
                                 src={product.image}
                                 alt={product.productName}
-                                className="w-16 h-16 object-cover rounded-lg"
+                                className="w-16 h-16 object-cover rounded-lg shrink-0"
                               />
                             )}
 
@@ -214,7 +214,7 @@ const Orders = () => {
                           </div>
 
                           {/* Price */}
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <p className="text-gray-400 text-sm">Price</p>
 
                             <p className="text-lime-300 font-bold">
@@ -232,7 +232,7 @@ const Orders = () => {
                 </div>
 
                 {/* Order Total */}
-                <div className="border-t border-[#222] mt-6 pt-5 flex justify-between items-center">
+                <div className="border-t border-[#222] mt-6 pt-5 flex flex-wrap justify-between items-center gap-2">
                   <span className="text-lg font-semibold">Order Total</span>
 
                   <span className="text-lime-300 text-2xl font-bold">

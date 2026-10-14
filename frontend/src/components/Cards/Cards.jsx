@@ -76,7 +76,7 @@ const Cards = ({ product }) => {
 
   return (
     <div
-      className="group md:m-0 m-5 bg-[#111] overflow-hidden border border-[#222]
+      className="group w-full bg-[#111] overflow-hidden border border-[#222]
       transition-all duration-500 hover:-translate-y-2
       hover:shadow-2xl hover:shadow-lime-300/20 relative"
     >

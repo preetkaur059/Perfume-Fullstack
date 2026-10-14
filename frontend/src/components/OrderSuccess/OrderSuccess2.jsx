@@ -43,10 +43,10 @@ const OrderSuccess2 = () => {
     : "N/A";
 
   return (
-    <div className="min-h-screen pt-30 bg-[#0d0d0d] flex items-center justify-center px-6 py-10">
+    <div className="min-h-screen pt-28 sm:pt-30 bg-[#0d0d0d] flex items-center justify-center px-4 sm:px-6 py-10">
 
       <div
-        className="bg-[#111] border border-[#222] p-4 md:p-8
+        className="bg-[#111] border border-[#222] p-5 sm:p-8
         rounded-2xl text-center max-w-xl w-full
         hover:shadow-xl hover:shadow-lime-300/20
         transition duration-500"
@@ -58,7 +58,7 @@ const OrderSuccess2 = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl text-white font-bold mb-4 tracking-wide">
+        <h1 className="text-2xl sm:text-3xl text-white font-bold mb-4 tracking-wide">
           Order Placed Successfully!
         </h1>
 

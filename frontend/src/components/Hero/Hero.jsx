@@ -11,12 +11,12 @@ void perfumeImg;
 const Hero = () => {
   return (
     <div
-      className="relative isolate pt-32 overflow-hidden bg-cover bg-center"
+      className="relative isolate pt-28 sm:pt-32 overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: `url(${bgImg})` }}
     >
-      <div className="max-w-[1300px] mx-auto px-4">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6">
 
-        <div className="min-h-[calc(100vh-14vh)] flex flex-col md:flex-row">
+        <div className="min-h-[50vh] sm:min-h-[65vh] md:min-h-[calc(100vh-14vh)] flex flex-col md:flex-row">
 
           {/* Left Text */}
           <motion.div
@@ -37,7 +37,7 @@ const Hero = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            <h2 className="text-white text-3xl mx-auto md:text-7xl font-serif">
+            <h2 className="text-white text-3xl sm:text-5xl text-center mx-auto md:text-7xl font-serif">
               THE FRAGRENCE OF LIFE
             </h2>
           </motion.div>

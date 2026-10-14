@@ -12,7 +12,8 @@ const Category = ({ type }) => {
   const [sort, setSort] = useState("newest");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const { searchItem } = useContext(StoreContext);
+  const { searchItem, debouncedSearchItem } = useContext(StoreContext);
+  const activeSearch = debouncedSearchItem !== undefined ? debouncedSearchItem : searchItem;
 
   // Keep the filter in sync when navigating from one category page to another.
   useEffect(() => {
@@ -22,19 +23,19 @@ const Category = ({ type }) => {
   // A new search, filter, or sort should always start from the first result page.
   useEffect(() => {
     setPage(1);
-  }, [category, sort, minPrice, maxPrice, searchItem]);
+  }, [category, sort, minPrice, maxPrice, activeSearch]);
 
   const queryParams = useMemo(
     () => ({
       page,
       limit: 10,
-      search: searchItem.trim() || undefined,
+      search: activeSearch?.trim() || undefined,
       category: category === "All" ? undefined : category,
       sort,
       minPrice,
       maxPrice,
     }),
-    [page, searchItem, category, sort, minPrice, maxPrice]
+    [page, activeSearch, category, sort, minPrice, maxPrice]
   );
 
   const { data: productsResponse } = useProducts(queryParams);
@@ -67,14 +68,14 @@ const Category = ({ type }) => {
 
 
   return (
-    <div className="bg-black pb-3 pt-28">
-      <div className="max-w-[1300px] mx-auto">
+    <div className="bg-black pb-12 pt-28">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="text-center">
           <Heading highlight={headingText} />
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
@@ -109,7 +110,7 @@ const Category = ({ type }) => {
             value={minPrice}
             onChange={(event) => setMinPrice(event.target.value)}
             placeholder="Min price"
-            className="w-28 border border-zinc-700 bg-black px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none"
+            className="w-24 sm:w-28 border border-zinc-700 bg-black px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none"
           />
           <input
             type="number"
@@ -117,21 +118,21 @@ const Category = ({ type }) => {
             value={maxPrice}
             onChange={(event) => setMaxPrice(event.target.value)}
             placeholder="Max price"
-            className="w-28 border border-zinc-700 bg-black px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none"
+            className="w-24 sm:w-28 border border-zinc-700 bg-black px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none"
           />
           <button
             type="button"
             onClick={handleClearFilters}
-            className="border border-zinc-700 px-3 py-2 text-white transition hover:border-lime-400 hover:text-lime-400"
+            className="border border-zinc-700 px-3 py-2 text-white transition hover:border-lime-400 hover:text-lime-400 cursor-pointer"
           >
             Clear filters
           </button>
         </div>
 
         <Pagination className="cursor-pointer" pagination={pagination} onPageChange={setPage} />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-10 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mt-8">
           {products.length === 0 ?
-            <p className='col-span-full text-white text-3xl flex justify-center items-center'>NO PRODUCT FOUND</p>
+            <p className='col-span-full text-white text-3xl flex justify-center items-center py-10'>NO PRODUCT FOUND</p>
             : (renderProduct)}
         </div>
 

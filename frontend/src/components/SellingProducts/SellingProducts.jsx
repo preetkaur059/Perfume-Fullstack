@@ -22,7 +22,8 @@ const SellingProducts = () => {
   const { data: productsResponse } = useProducts();
   const products = productsResponse?.data ?? [];
 
-  const { searchItem } = useContext(StoreContext);
+  const { searchItem, debouncedSearchItem } = useContext(StoreContext);
+  const activeSearch = debouncedSearchItem !== undefined ? debouncedSearchItem : searchItem;
 
   const navigate = useNavigate();
 
@@ -31,15 +32,15 @@ const SellingProducts = () => {
     activeTab === "All"
       ? products
       : products.filter(
-          (item) =>
-            item.category?.toLowerCase() === activeTab.toLowerCase()
-        );
+        (item) =>
+          item.category?.toLowerCase() === activeTab.toLowerCase()
+      );
 
-  // Filter products according to search
+  // Filter products according to debounced search
   const searchedItems = filteredItems.filter((product) =>
     product.productName
       ?.toLowerCase()
-      .includes((searchItem || "").toLowerCase())
+      .includes((activeSearch || "").toLowerCase())
   );
 
   // Keep this section focused on eight products. The complete catalogue is
@@ -50,7 +51,7 @@ const SellingProducts = () => {
     <div className="bg-black pt-10">
       <div
         id="product-section"
-        className="max-w-[1300px] mx-auto"
+        className="max-w-[1300px] mx-auto "
       >
         {/* Heading */}
         <div
@@ -72,11 +73,10 @@ const SellingProducts = () => {
               key={category}
               type="button"
               onClick={() => setActiveTab(category)}
-              className={`transform transition duration-500 hover:scale-105 cursor-pointer px-5 py-2 md:text-lg ${
-                activeTab === category
-                  ? "bg-gradient-to-b from-lime-200 to-lime-300 font-bold text-black"
-                  : "bg-white font-medium text-black"
-              }`}
+              className={`transform transition duration-500 hover:scale-105 cursor-pointer px-5 py-2 md:text-lg ${activeTab === category
+                ? "bg-gradient-to-b from-lime-200 to-lime-300 font-bold text-black"
+                : "bg-white font-medium text-black"
+                }`}
             >
               {category}
             </button>
@@ -104,7 +104,7 @@ const SellingProducts = () => {
                 <button
                   type="button"
                   onClick={() => productSwiper?.slideNext()}
-                  disabled={!productSwiper }
+                  disabled={!productSwiper}
                   aria-label="Show next products"
                   className="flex h-10 w-10 items-center cursor-pointer justify-center rounded-full border border-lime-300/60 text-lime-200 transition hover:bg-lime-300 hover:text-black disabled:opacity-40"
                 >
@@ -113,7 +113,7 @@ const SellingProducts = () => {
               </div>
 
               <Swiper
-                key={`${activeTab}-${searchItem}`}
+                key={`${activeTab}-${activeSearch}`}
                 modules={[Pagination]}
                 loop={true}
                 onSwiper={(swiper) => {
@@ -126,7 +126,7 @@ const SellingProducts = () => {
                 slidesPerGroup={1}
                 speed={550}
                 grabCursor
-                
+
                 pagination={{ clickable: true }}
                 breakpoints={{
                   640: { slidesPerView: 2, spaceBetween: 20 },
