@@ -16,7 +16,7 @@ const Hero = () => {
     >
       <div className="max-w-[1300px] mx-auto px-4 sm:px-6">
 
-        <div className="min-h-[50vh] sm:min-h-[65vh] md:min-h-[calc(100vh-14vh)] flex flex-col md:flex-row">
+        <div className="min-h-[60vh] sm:min-h-[90vh] md:min-h-[calc(100vh-14vh)] flex flex-col md:flex-row">
 
           {/* Left Text */}
           <motion.div
@@ -25,19 +25,19 @@ const Hero = () => {
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className="text-white text-3xl md:text-7xl font-serif">
-              THE <br/> FRAGRENCE <br/> OF LIFE
+            <h1 className="text-white text-2xl md:text-7xl font-serif">
+              THE <br /> FRAGRENCE <br /> OF LIFE
             </h1>
           </motion.div>
 
           {/* Mobile Heading */}
           <motion.div
-            className="flex-1 block md:hidden mt-5 flex items-start"
+            className="flex-1 block md:hidden mt-2 flex items-start"
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            <h2 className="text-white text-3xl sm:text-5xl text-center mx-auto md:text-7xl font-serif">
+            <h2 className="text-white text-3xl sm:text-4xl text-center mx-auto md:text-7xl font-serif">
               THE FRAGRENCE OF LIFE
             </h2>
           </motion.div>
@@ -67,11 +67,11 @@ const Hero = () => {
           >
             <div className="w-[400px] h-[150px] hidden md:block scroll-box overflow-y-scroll p-3">
               <p className="text-white text-sm md:text-xl text-right">
-                A timeless fragrance that reflects elegance, confidence, and modern charm, crafted 
-                for individuals who appreciate true luxury. Each note is carefully blended to 
-                create a scent that feels unique, memorable, and expressive. Our perfumes are 
+                A timeless fragrance that reflects elegance, confidence, and modern charm, crafted
+                for individuals who appreciate true luxury. Each note is carefully blended to
+                create a scent that feels unique, memorable, and expressive. Our perfumes are
                 designed to elevate everyday moments, leaving a subtle yet lasting impression
-                wherever you go. Discover a fragrance that complements your personality and 
+                wherever you go. Discover a fragrance that complements your personality and
                 becomes a signature of your style and presence.
               </p>
             </div>

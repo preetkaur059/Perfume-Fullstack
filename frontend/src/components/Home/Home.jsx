@@ -7,11 +7,10 @@ import SellingProducts from '../SellingProducts/SellingProducts'
 import Services from '../Services/Services'
 import Sale from '../Sale/Sale'
 import Testimonals from '../Testimonals/Testimonals'
-import Counter from '../Counter'
+
 const Home = () => {
   return (
     <div>
-      {/* <Counter /> */}
       <Hero />
       <ScrollBanner />
       <OurStory />
