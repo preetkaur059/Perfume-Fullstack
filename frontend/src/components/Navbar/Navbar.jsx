@@ -77,12 +77,13 @@ const Navbar = () => {
 
     return (
         <header className="z-50 fixed top-5 left-0 right-0">
-            <nav className="w-[95%] max-w-[1400px] backdrop-blur-3xl rounded-lg bg-white/5 border border-white/10 flex mx-auto md:h-[12vh] h-[10vh] md:px-10 px-5 items-center justify-between">
+            {/* <nav className="w-[95%] max-w-[1400px] backdrop-blur-3xl rounded-lg bg-white/5 border border-white/10 flex mx-auto min-h-[64px] md:min-h-[12vh] h-[10vh] md:px-10 px-5 items-center justify-between"> */}
+            <nav className="w-[95%] max-w-[1400px] backdrop-blur-3xl rounded-lg bg-white/5 border border-white/10 flex mx-auto min-h-[64px] md:min-h-[12vh] h-auto md:px-10 px-3 sm:px-5 items-center justify-between gap-2">
                 <div className="">
                     <NavLink to="/" className='text-3xl text-white font-bold'>ZIVARA</NavLink>
                 </div>
-                <div className="md:flex hidden gap-8 text-xl">
-
+                {/* <div className="md:flex hidden gap-8 text-xl"> */}
+                <div className="hidden lg:flex gap-4 xl:gap-8 text-base xl:text-xl">
                     <NavLink to="/" className={({ isActive }) => `font-medium tracking-wider ${isActive ? "text-lime-200" : "text-white hover:text-lime-200"}`} >
                         Home
                     </NavLink>
@@ -138,9 +139,10 @@ const Navbar = () => {
 
                 </div>
                 {/* nav action  */}
-                <div className="flex  items-center gap-x-5">
-                    <div className="md:flex hidden border-lime-300 text-white border-2 rounded-xl">
-
+                {/* <div className="flex  items-center gap-x-5"> */}
+                <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-3 xl:gap-5">
+                    {/* <div className="md:flex hidden border-lime-300 text-white border-2 rounded-xl"> */}
+                    <div className="hidden lg:flex min-w-0 max-w-[260px] xl:max-w-[300px] border-lime-300 text-white border-2 rounded-xl">
                         {/* search bar  */}
                         <input type="text" name='text' id='text' value={searchItem} className='flex-1 h-[5vh] px-3 focus:outline-none'
                             onFocus={handleScroll}
@@ -233,18 +235,28 @@ const Navbar = () => {
                             </div>
                         )}
                     </div>
-                    <button onClick={() => setShowMenu(!showMenu)} className={`text-white text-2xl md:hidden`}>
+                    {/* <button onClick={() => setShowMenu(!showMenu)} className={`text-white text-2xl md:hidden`}> */}
+                    <button
+                        type="button"
+                        aria-label={showMenu ? "Close menu" : "Open menu"}
+                        aria-expanded={showMenu}
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="text-white text-2xl lg:hidden shrink-0"
+                    >
                         {showMenu ? <FaTimes /> : <FaBars />}
                     </button>
                 </div>
 
                 {/* mobile menu */}
                 <div
-                    className={`fixed top-24 left-1/2 -translate-x-1/2 w-[92%] max-w-sm rounded-2xl bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/15 p-6 flex flex-col items-center justify-center md:hidden transition-all duration-300 gap-6 text-xl shadow-2xl shadow-black/80 z-50 ${
-                        showMenu
-                            ? "opacity-100 scale-100 pointer-events-auto"
-                            : "opacity-0 scale-95 pointer-events-none -translate-y-4"
-                    }`}
+                    // className={`fixed top-24 left-1/2 -translate-x-1/2 w-[92%] max-w-sm rounded-2xl bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/15 p-6 flex flex-col items-center justify-center md:hidden transition-all duration-300 gap-6 text-xl shadow-2xl shadow-black/80 z-50 ${showMenu
+                    //     ? "opacity-100 scale-100 pointer-events-auto"
+                    //     : "opacity-0 scale-95 pointer-events-none -translate-y-4"
+                    //     }`}
+                    className={`fixed top-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-[92%] max-w-sm max-h-[calc(100dvh-120px)] overflow-y-auto rounded-2xl bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/15 p-6 flex flex-col items-center justify-center lg:hidden transition-all duration-300 gap-6 text-xl shadow-2xl shadow-black/80 z-50 ${showMenu
+                        ? "opacity-100 scale-100 pointer-events-auto"
+                        : "opacity-0 scale-95 pointer-events-none -translate-y-4"
+                        }`}
                 >
                     <NavLink to="/" onClick={handleLinkClick} className={({ isActive }) => `font-semibold tracking-wider ${isActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>Home</NavLink>
                     <NavLink to="/Allproducts" onClick={handleLinkClick} className={({ isActive }) => `font-semibold tracking-wider ${isActive ? "text-lime-300" : "text-white hover:text-lime-300"}`}>All Products</NavLink>
@@ -309,7 +321,7 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
-        </header>
+        </header >
     )
 }
 
