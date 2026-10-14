@@ -16,13 +16,17 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "https://perfume-fullstack.vercel.app/",
+    // origin: process.env.CLIENT_ORIGIN || "https://perfume-fullstack.vercel.app/",
+    origin: [
+      "http://localhost:5173",
+      "https://perfume-fullstack.vercel.app",
+    ],
     credentials: true,
   }),
 );
 
 app.use(json());
-app.use(cookieParser()); 
+app.use(cookieParser());
 
 app.use("/users", userRouter);
 app.use("/products", productsRouter);
